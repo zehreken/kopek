@@ -1,4 +1,4 @@
-mod lib;
+// mod lib;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 
 fn main() {
