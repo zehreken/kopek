@@ -1,15 +1,10 @@
-// mod lib;
+extern crate kopek;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 
 fn main() {
-    let mut domi_ogg = audrey::open("domi.ogg").unwrap();
+    let domi_frames = kopek::decoder::decode("domi.ogg");
 
-    let mut cycling = domi_ogg
-        .frames::<[i16; 2]>()
-        .map(Result::unwrap)
-        .collect::<Vec<_>>();
-
-    let mut cycling = cycling.iter().cloned().cycle();
+    let mut cycling = domi_frames.iter().cloned().cycle();
 
     let host = cpal::default_host();
     let device = host
@@ -22,9 +17,8 @@ fn main() {
         .next()
         .expect("Failed get a config");
 
-    let mut format = config_range.with_max_sample_rate();
+    let format = config_range.with_max_sample_rate();
 
-    let channels = format.channels as usize;
     let event_loop = host.event_loop();
     let stream_id = event_loop
         .build_output_stream(&device, &format)
