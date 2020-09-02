@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 cpal = "0.10.0"
 audrey = "0.2.0"
+ggez = "0.5.1"
