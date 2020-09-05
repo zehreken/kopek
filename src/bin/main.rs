@@ -1,7 +1,73 @@
 extern crate kopek;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
+use ggez::event::{self, EventHandler};
+use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
 
 fn main() {
+    // Make a Context.
+    let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
+        .build()
+        .expect("Could not create ggez context!");
+
+    // Create an instance of your event handler.
+    // Usually, you should provide it with the Context object to
+    // use when setting your game up.
+    let mut game = Game::new(&mut ctx);
+
+    // Run!
+    match event::run(&mut ctx, &mut event_loop, &mut game) {
+        Ok(_) => println!("Exited cleanly."),
+        Err(e) => println!("Error occured: {}", e),
+    }
+}
+
+struct Game {
+    frames: Vec<[i16; 2]>,
+    line: graphics::Mesh,
+}
+
+impl Game {
+    pub fn new(ctx: &mut Context) -> Game {
+        let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
+        let mut x = 0;
+        let points: Vec<nalgebra::Point2<f32>> = frames
+            .iter()
+            .step_by(1)
+            .map(|frame| {
+                x = x + 1;
+                nalgebra::Point2::new(x as f32, 300.0 + (frame[0] as f32) / 500.0)
+            })
+            .collect();
+
+        println!("{}", points.len());
+            
+        let mut mesh_builder = graphics::MeshBuilder::new();
+
+        let line = mesh_builder
+            .line(&points[..], 1.0, graphics::Color::from_rgb(255, 0, 55))
+            .unwrap()
+            .build(ctx)
+            .unwrap();
+        Game { frames, line }
+    }
+}
+
+impl EventHandler for Game {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        // Update code here...
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::clear(ctx, graphics::WHITE);
+        // Draw code here...
+        graphics::draw(ctx, &self.line, graphics::DrawParam::default()).unwrap();
+
+        graphics::present(ctx)
+    }
+}
+
+fn test_ogg() {
     let domi_frames = kopek::decoder::decode("domi.ogg");
 
     let mut cycling = domi_frames.iter().cloned().cycle();
