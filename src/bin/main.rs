@@ -28,11 +28,11 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
+        let frames = kopek::decoder::decode("domi.ogg");
         let mut x = 0;
         let points: Vec<nalgebra::Point2<f32>> = frames
             .iter()
-            .step_by(1)
+            .step_by(13000)
             .map(|frame| {
                 x = x + 1;
                 nalgebra::Point2::new(x as f32, 300.0 + (frame[0] as f32) / 500.0)
@@ -40,7 +40,7 @@ impl Game {
             .collect();
 
         println!("{}", points.len());
-            
+
         let mut mesh_builder = graphics::MeshBuilder::new();
 
         let line = mesh_builder
