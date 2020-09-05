@@ -20,6 +20,6 @@ mod tests {
     fn detect_bpm_test() {
         let frames = decode(PATH);
         let bpm = detect_bpm(frames);
-        assert_eq!(0.0, bpm);
+        assert_eq!(0, bpm);
     }
 }
