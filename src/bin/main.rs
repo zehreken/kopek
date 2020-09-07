@@ -24,7 +24,6 @@ fn main() {
 }
 
 struct Game {
-    frames: Vec<[i16; 2]>,
     line: graphics::Mesh,
 }
 
@@ -50,7 +49,8 @@ impl Game {
             .unwrap()
             .build(ctx)
             .unwrap();
-        Game { frames, line }
+
+        Game { line }
     }
 }
 

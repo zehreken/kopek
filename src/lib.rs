@@ -3,7 +3,7 @@ pub mod decoder;
 #[cfg(test)]
 mod tests {
     use super::decoder::*;
-    const PATH: &str = "domi.ogg";
+    const PATH: &str = "sine_440hz_stereo.ogg";
     #[test]
     fn first_frame_test() {
         let frames = decode(PATH);
@@ -14,6 +14,12 @@ mod tests {
     fn frame_length_test() {
         let frames = decode(PATH);
         assert_eq!(44608, frames.len());
+    }
+
+    #[test]
+    fn get_duration_in_seconds_test() {
+        let frames = decode(PATH);
+        assert_eq!(1, get_duration_in_seconds(frames))
     }
 
     #[test]
