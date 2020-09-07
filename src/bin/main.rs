@@ -9,6 +9,8 @@ fn main() {
         .build()
         .expect("Could not create ggez context!");
 
+    graphics::set_window_title(&ctx, "kopek_test");
+
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
     // use when setting your game up.

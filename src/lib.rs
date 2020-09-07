@@ -3,7 +3,7 @@ pub mod decoder;
 #[cfg(test)]
 mod tests {
     use super::decoder::*;
-    const PATH: &str = "sine_440hz_stereo.ogg";
+    const PATH: &str = "domi.ogg";
     #[test]
     fn first_frame_test() {
         let frames = decode(PATH);
