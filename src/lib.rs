@@ -1,4 +1,5 @@
 pub mod decoder;
+pub mod fft;
 
 #[cfg(test)]
 mod tests {

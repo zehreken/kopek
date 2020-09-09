@@ -16,11 +16,25 @@ fn main() {
     // use when setting your game up.
     let mut game = Game::new(&mut ctx);
 
+    fft_test();
+
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
     }
+}
+
+fn fft_test() {
+    let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
+    let input: Vec<_> = frames[..128]
+        .iter()
+        .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
+        .collect();
+
+    kopek::fft::show("input: ", &input);
+    let output = kopek::fft::fft(&input);
+    kopek::fft::show("output: ", &output);
 }
 
 struct Game {
@@ -29,11 +43,11 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = kopek::decoder::decode("domi.ogg");
+        let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
         let mut x = 0;
         let points: Vec<nalgebra::Point2<f32>> = frames
             .iter()
-            .step_by(13000)
+            .step_by(100)
             .map(|frame| {
                 x = x + 1;
                 nalgebra::Point2::new(x as f32, 300.0 + (frame[0] as f32) / 500.0)
