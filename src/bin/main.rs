@@ -16,7 +16,7 @@ fn main() {
     // use when setting your game up.
     let mut game = Game::new(&mut ctx);
 
-    fft_test();
+    // fft_test();
 
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut game) {
@@ -27,7 +27,7 @@ fn main() {
 
 fn fft_test() {
     let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
-    let input: Vec<_> = frames[..128]
+    let input: Vec<_> = frames[..1024]
         .iter()
         .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
         .collect();
@@ -38,33 +38,59 @@ fn fft_test() {
 }
 
 struct Game {
-    line: graphics::Mesh,
+    time_line: graphics::Mesh,
+    frequency_line: graphics::Mesh,
 }
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
+        let frames = &kopek::decoder::decode("sine_440hz_stereo.ogg")[0 * 1024..1 * 1024];
         let mut x = 0;
         let points: Vec<nalgebra::Point2<f32>> = frames
             .iter()
-            .step_by(100)
             .map(|frame| {
                 x = x + 1;
-                nalgebra::Point2::new(x as f32, 300.0 + (frame[0] as f32) / 500.0)
+                nalgebra::Point2::new(x as f32, 100.0 + (frame[0] as f32) / 500.0)
             })
             .collect();
 
-        println!("{}", points.len());
-
         let mut mesh_builder = graphics::MeshBuilder::new();
 
-        let line = mesh_builder
+        let time_line = mesh_builder
             .line(&points[..], 1.0, graphics::Color::from_rgb(255, 0, 55))
             .unwrap()
             .build(ctx)
             .unwrap();
 
-        Game { line }
+        let input: Vec<_> = frames
+            .iter()
+            .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
+            .collect();
+
+        let output = kopek::fft::fft(&input);
+        x = 0;
+        let points: Vec<nalgebra::Point2<f32>> = output
+            .iter()
+            .map(|c| {
+                x = x + 1;
+                nalgebra::Point2::new(
+                    x as f32,
+                    500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
+                )
+            })
+            .collect();
+        let frequency_line = mesh_builder
+            .line(&points[..], 1.0, graphics::Color::from_rgb(0, 0, 255))
+            .unwrap()
+            .build(ctx)
+            .unwrap();
+
+        let sample_frequency = 44100;
+        let fft_size = 1024;
+        Game {
+            time_line,
+            frequency_line,
+        }
     }
 }
 
@@ -77,7 +103,8 @@ impl EventHandler for Game {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
         // Draw code here...
-        graphics::draw(ctx, &self.line, graphics::DrawParam::default()).unwrap();
+        graphics::draw(ctx, &self.time_line, graphics::DrawParam::default()).unwrap();
+        graphics::draw(ctx, &self.frequency_line, graphics::DrawParam::default()).unwrap();
 
         graphics::present(ctx)
     }
