@@ -40,11 +40,12 @@ fn fft_test() {
 struct Game {
     time_line: graphics::Mesh,
     frequency_line: graphics::Mesh,
+    circles: Vec<graphics::Mesh>,
 }
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = &kopek::decoder::decode("sine_440hz_stereo.ogg")[0 * 1024..1 * 1024];
+        let frames = &kopek::decoder::decode("sine_440hz_stereo.ogg")[0 * 1024..4 * 1024];
         let mut x = 0;
         let points: Vec<nalgebra::Point2<f32>> = frames
             .iter()
@@ -57,7 +58,7 @@ impl Game {
         let mut mesh_builder = graphics::MeshBuilder::new();
 
         let time_line = mesh_builder
-            .line(&points[..], 1.0, graphics::Color::from_rgb(255, 0, 55))
+            .line(&points[..], 2.0, graphics::Color::from_rgb(255, 0, 55))
             .unwrap()
             .build(ctx)
             .unwrap();
@@ -80,16 +81,36 @@ impl Game {
             })
             .collect();
         let frequency_line = mesh_builder
-            .line(&points[..], 1.0, graphics::Color::from_rgb(0, 0, 255))
+            .line(&points[..], 2.0, graphics::Color::from_rgb(0, 0, 255))
             .unwrap()
             .build(ctx)
             .unwrap();
 
-        let sample_frequency = 44100;
-        let fft_size = 1024;
+        let points: Vec<nalgebra::Point2<f32>> = (0..800)
+            .step_by(10)
+            .into_iter()
+            .map(|i| nalgebra::Point2::new(i as f32, 300.0))
+            .collect();
+
+        let mut circles: Vec<graphics::Mesh> = vec![];
+        for point in points {
+            circles.push(
+                mesh_builder
+                    .circle(
+                        graphics::DrawMode::fill(),
+                        point,
+                        2.0,
+                        1.0,
+                        graphics::Color::from_rgb(0, 0, 0),
+                    )
+                    .build(ctx)
+                    .unwrap(),
+            );
+        }
         Game {
             time_line,
             frequency_line,
+            circles,
         }
     }
 }
@@ -105,6 +126,9 @@ impl EventHandler for Game {
         // Draw code here...
         graphics::draw(ctx, &self.time_line, graphics::DrawParam::default()).unwrap();
         graphics::draw(ctx, &self.frequency_line, graphics::DrawParam::default()).unwrap();
+        for circle in &self.circles {
+            graphics::draw(ctx, circle, graphics::DrawParam::default()).unwrap();
+        }
 
         graphics::present(ctx)
     }
