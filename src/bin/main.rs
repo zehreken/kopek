@@ -45,16 +45,20 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = &kopek::decoder::decode("sine_1000.ogg")[0 * 1024..4 * 1024];
-        let frames_2 = &kopek::decoder::decode("sine_100.ogg")[0 * 1024..4 * 1024];
-        let frames_sum: Vec<[i16; 2]> = (0 * 1024..4 * 1024)
-            .map(|i| {
-                [
-                    frames[i][0] / 2 + frames_2[i][0] / 2, // First divide by 2 and then sum because i16 overflows easily
-                    frames[i][1] / 2 + frames_2[i][1] / 2,
-                ]
-            })
-            .collect();
+        let paths = [
+            "sine_100.ogg",
+            "sine_200.ogg",
+            "sine_500.ogg",
+            "sine_1000.ogg",
+        ];
+        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; 4 * 1024];
+        for path in paths.iter() {
+            let frames = &kopek::decoder::decode(path)[0 * 1024..4 * 1024];
+            for (i, frame) in frames.iter().enumerate() {
+                frames_sum[i][0] += frame[0] / paths.len() as i16; // First divide by the number of waves and then sum because i16 overflows easily
+                frames_sum[i][1] += frame[1] / paths.len() as i16;
+            }
+        }
 
         let mut x = 0;
         let points: Vec<nalgebra::Point2<f32>> = frames_sum
@@ -102,6 +106,7 @@ impl Game {
             .map(|i| nalgebra::Point2::new(i as f32, 300.0))
             .collect();
 
+        x = 0;
         let mut circles: Vec<graphics::Mesh> = vec![];
         for point in points {
             circles.push(
@@ -111,11 +116,16 @@ impl Game {
                         point,
                         2.0,
                         1.0,
-                        graphics::Color::from_rgb(0, 0, 0),
+                        if x % 5 == 0 {
+                            graphics::Color::from_rgb(255, 0, 0)
+                        } else {
+                            graphics::Color::from_rgb(0, 0, 0)
+                        },
                     )
                     .build(ctx)
                     .unwrap(),
             );
+            x += 1;
         }
         Game {
             time_line,
