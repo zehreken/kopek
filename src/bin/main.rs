@@ -45,9 +45,19 @@ struct Game {
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
-        let frames = &kopek::decoder::decode("sine_440hz_stereo.ogg")[0 * 1024..4 * 1024];
+        let frames = &kopek::decoder::decode("sine_1000.ogg")[0 * 1024..4 * 1024];
+        let frames_2 = &kopek::decoder::decode("sine_100.ogg")[0 * 1024..4 * 1024];
+        let frames_sum: Vec<[i16; 2]> = (0 * 1024..4 * 1024)
+            .map(|i| {
+                [
+                    frames[i][0] / 2 + frames_2[i][0] / 2, // First divide by 2 and then sum because i16 overflows easily
+                    frames[i][1] / 2 + frames_2[i][1] / 2,
+                ]
+            })
+            .collect();
+
         let mut x = 0;
-        let points: Vec<nalgebra::Point2<f32>> = frames
+        let points: Vec<nalgebra::Point2<f32>> = frames_sum
             .iter()
             .map(|frame| {
                 x = x + 1;
@@ -63,7 +73,7 @@ impl Game {
             .build(ctx)
             .unwrap();
 
-        let input: Vec<_> = frames
+        let input: Vec<_> = frames_sum
             .iter()
             .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
             .collect();
