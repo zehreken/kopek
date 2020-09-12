@@ -51,9 +51,12 @@ impl Game {
             "sine_500.ogg",
             "sine_1000.ogg",
         ];
-        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; 4 * 1024];
+        let sample_size = 4096;
+        let start = 0;
+        let end = start + sample_size;
+        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
         for path in paths.iter() {
-            let frames = &kopek::decoder::decode(path)[0 * 1024..4 * 1024];
+            let frames = &kopek::decoder::decode(path)[start..end];
             for (i, frame) in frames.iter().enumerate() {
                 frames_sum[i][0] += frame[0] / paths.len() as i16; // First divide by the number of waves and then sum because i16 overflows easily
                 frames_sum[i][1] += frame[1] / paths.len() as i16;
@@ -100,10 +103,11 @@ impl Game {
             .build(ctx)
             .unwrap();
 
-        let points: Vec<nalgebra::Point2<f32>> = (0..800)
-            .step_by(10)
+        // One pixel is 10Hz, 10 pixel is 100Hz
+        let bin_size = 44100.0 / sample_size as f32;
+        let points: Vec<nalgebra::Point2<f32>> = (0..80)
             .into_iter()
-            .map(|i| nalgebra::Point2::new(i as f32, 300.0))
+            .map(|i| nalgebra::Point2::new(10.0 * i as f32, 300.0))
             .collect();
 
         x = 0;
@@ -150,6 +154,7 @@ impl EventHandler for Game {
             graphics::draw(ctx, circle, graphics::DrawParam::default()).unwrap();
         }
 
+        std::thread::sleep(std::time::Duration::from_millis(100));
         graphics::present(ctx)
     }
 }
