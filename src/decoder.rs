@@ -2,11 +2,30 @@ pub fn decode<P>(path: P) -> Vec<[i16; 2]>
 where
     P: AsRef<std::path::Path>,
 {
+    let file_path = path.as_ref().display().to_string();
     let mut file = audrey::open(path).expect("Error while opening file");
-    let frames = file
-        .frames::<[i16; 2]>()
-        .map(Result::unwrap)
-        .collect::<Vec<[i16; 2]>>();
+    println!("{} -> {:?}", file_path, file.description());
+    let channel_count = file.description().channel_count();
+    let frames: Vec<[i16; 2]>;
+    match channel_count {
+        1 => {
+            let mono_frames = file
+                .frames::<[i16; 1]>()
+                .map(Result::unwrap)
+                .collect::<Vec<[i16; 1]>>();
+
+            frames = mono_frames
+                .iter()
+                .map(|f| [f[0], f[0]])
+                .collect::<Vec<[i16; 2]>>();
+        }
+        _ => {
+            frames = file
+                .frames::<[i16; 2]>()
+                .map(Result::unwrap)
+                .collect::<Vec<[i16; 2]>>();
+        }
+    }
 
     frames
 }

@@ -66,8 +66,11 @@ impl Game {
         let paths = [
             "sine_100.ogg",
             "sine_200.ogg",
+            "sine_440.ogg",
             "sine_500.ogg",
             "sine_1000.ogg",
+            "sine_10000.ogg",
+            // "sine_440hz_stereo.ogg",
         ];
         let sample_size = 1024;
         let start = 0;
