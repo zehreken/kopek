@@ -105,9 +105,6 @@ impl Game {
 
         let output = kopek::fft::fft(&input);
         x = 0;
-        // Frequency bin size is for each element in the output vector
-        // For example if the bin size is 44100 / 1024 = 43.07, then from
-        let bin_size = 44100.0 / sample_size as f32;
         let points: Vec<nalgebra::Point2<f32>> = output
             .iter()
             .map(|c| {
@@ -125,10 +122,13 @@ impl Game {
             .build(ctx)
             .unwrap();
 
-        // One pixel is 10Hz, 10 pixel is 100Hz
-        let points: Vec<nalgebra::Point2<f32>> = (0..80)
+        // Frequency bin size is for each element in the output vector
+        // For example if the bin size is 44100 / 1024 = 43.07 and
+        // if the screen width is 1024, then each pixel will represent 43.07Hz
+        let bin_size = 44100.0 / sample_size as f32;
+        let points: Vec<nalgebra::Point2<f32>> = (0..128)
             .into_iter()
-            .map(|i| nalgebra::Point2::new(10.0 * i as f32, 300.0))
+            .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
             .collect();
 
         x = 0;
