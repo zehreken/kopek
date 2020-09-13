@@ -104,15 +104,15 @@ impl Game {
             .collect();
 
         let output = kopek::fft::fft(&input);
-        x = 0;
+        let mut x = 0.0;
         let points: Vec<nalgebra::Point2<f32>> = output
             .iter()
             .map(|c| {
                 let p = nalgebra::Point2::new(
-                    x as f32,
+                    x,
                     500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
                 );
-                x = x + 1024 / sample_size;
+                x = x + 1024.0 / sample_size as f32;
                 p
             })
             .collect();
@@ -131,7 +131,7 @@ impl Game {
             .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
             .collect();
 
-        x = 0;
+        let mut x = 0;
         let mut circles: Vec<graphics::Mesh> = vec![];
         for point in points {
             circles.push(
