@@ -1,5 +1,6 @@
 extern crate kopek;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
+use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
 
@@ -9,6 +10,23 @@ fn main() {
         .build()
         .expect("Could not create ggez context!");
 
+    let (width, height) = (1024.0, 600.0);
+    let w_mode = WindowMode {
+        width,
+        height,
+        maximized: false,
+        fullscreen_type: FullscreenType::Windowed,
+        borderless: false,
+        min_width: 0.0,
+        max_width: 0.0,
+        min_height: 0.0,
+        max_height: 0.0,
+        resizable: false,
+    };
+
+    graphics::set_mode(&mut ctx, w_mode).expect("Error while setting window mode");
+    graphics::set_screen_coordinates(&mut ctx, graphics::Rect::new(0.0, 0.0, width, height))
+        .unwrap();
     graphics::set_window_title(&ctx, "kopek_test");
 
     // Create an instance of your event handler.
@@ -51,7 +69,7 @@ impl Game {
             "sine_500.ogg",
             "sine_1000.ogg",
         ];
-        let sample_size = 4096;
+        let sample_size = 1024;
         let start = 0;
         let end = start + sample_size;
         let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
@@ -87,14 +105,18 @@ impl Game {
 
         let output = kopek::fft::fft(&input);
         x = 0;
+        // Frequency bin size is for each element in the output vector
+        // For example if the bin size is 44100 / 1024 = 43.07, then from
+        let bin_size = 44100.0 / sample_size as f32;
         let points: Vec<nalgebra::Point2<f32>> = output
             .iter()
             .map(|c| {
-                x = x + 1;
-                nalgebra::Point2::new(
+                let p = nalgebra::Point2::new(
                     x as f32,
                     500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
-                )
+                );
+                x = x + 1024 / sample_size;
+                p
             })
             .collect();
         let frequency_line = mesh_builder
@@ -104,7 +126,6 @@ impl Game {
             .unwrap();
 
         // One pixel is 10Hz, 10 pixel is 100Hz
-        let bin_size = 44100.0 / sample_size as f32;
         let points: Vec<nalgebra::Point2<f32>> = (0..80)
             .into_iter()
             .map(|i| nalgebra::Point2::new(10.0 * i as f32, 300.0))
