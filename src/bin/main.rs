@@ -56,6 +56,7 @@ fn fft_test() {
 }
 
 struct Game {
+    frames: Vec<[i16; 2]>,
     time_line: graphics::Mesh,
     frequency_line: graphics::Mesh,
     circles: Vec<graphics::Mesh>,
@@ -64,16 +65,17 @@ struct Game {
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
         let paths = [
-            "sine_100.ogg",
-            "sine_200.ogg",
-            "sine_440.ogg",
-            "sine_500.ogg",
-            "sine_1000.ogg",
-            "sine_10000.ogg",
+            // "sine_100.ogg",
+            // "sine_200.ogg",
+            // "sine_440.ogg",
+            // "sine_500.ogg",
+            // "sine_1000.ogg",
+            // "sine_10000.ogg",
             // "sine_440hz_stereo.ogg",
+            "dimsunk_funky.ogg",
         ];
-        let sample_size = 1024;
-        let start = 0;
+        let sample_size = 1024 * 16;
+        let start = 1024 * 128;
         let end = start + sample_size;
         let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
         for path in paths.iter() {
@@ -84,83 +86,95 @@ impl Game {
             }
         }
 
-        let mut x = 0;
-        let points: Vec<nalgebra::Point2<f32>> = frames_sum
-            .iter()
-            .map(|frame| {
-                x = x + 1;
-                nalgebra::Point2::new(x as f32, 100.0 + (frame[0] as f32) / 500.0)
-            })
-            .collect();
+        let (time_line, frequency_line, circles) = analyze(&frames_sum, ctx);
 
-        let mut mesh_builder = graphics::MeshBuilder::new();
-
-        let time_line = mesh_builder
-            .line(&points[..], 2.0, graphics::Color::from_rgb(255, 0, 55))
-            .unwrap()
-            .build(ctx)
-            .unwrap();
-
-        let input: Vec<_> = frames_sum
-            .iter()
-            .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
-            .collect();
-
-        let output = kopek::fft::fft(&input);
-        let mut x = 0.0;
-        let points: Vec<nalgebra::Point2<f32>> = output
-            .iter()
-            .map(|c| {
-                let p = nalgebra::Point2::new(
-                    x,
-                    500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
-                );
-                x = x + 1024.0 / sample_size as f32;
-                p
-            })
-            .collect();
-        let frequency_line = mesh_builder
-            .line(&points[..], 2.0, graphics::Color::from_rgb(0, 0, 255))
-            .unwrap()
-            .build(ctx)
-            .unwrap();
-
-        // Frequency bin size is for each element in the output vector
-        // For example if the bin size is 44100 / 1024 = 43.07 and
-        // if the screen width is 1024, then each pixel will represent 43.07Hz
-        let bin_size = 44100.0 / sample_size as f32;
-        let points: Vec<nalgebra::Point2<f32>> = (0..128)
-            .into_iter()
-            .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
-            .collect();
-
-        let mut x = 0;
-        let mut circles: Vec<graphics::Mesh> = vec![];
-        for point in points {
-            circles.push(
-                mesh_builder
-                    .circle(
-                        graphics::DrawMode::fill(),
-                        point,
-                        2.0,
-                        1.0,
-                        if x % 5 == 0 {
-                            graphics::Color::from_rgb(255, 0, 0)
-                        } else {
-                            graphics::Color::from_rgb(0, 0, 0)
-                        },
-                    )
-                    .build(ctx)
-                    .unwrap(),
-            );
-            x += 1;
-        }
         Game {
+            frames: frames_sum,
             time_line,
             frequency_line,
             circles,
         }
     }
+}
+
+fn analyze(
+    frames_sum: &Vec<[i16; 2]>,
+    ctx: &mut Context,
+) -> (graphics::Mesh, graphics::Mesh, Vec<graphics::Mesh>) {
+    let sample_size = 1024 * 16;
+    let mut x = 0;
+    let points: Vec<nalgebra::Point2<f32>> = frames_sum
+        .iter()
+        .map(|frame| {
+            x = x + 1;
+            nalgebra::Point2::new(x as f32, 100.0 + (frame[0] as f32) / 500.0)
+        })
+        .collect();
+
+    let mut mesh_builder = graphics::MeshBuilder::new();
+
+    let time_line = mesh_builder
+        .line(&points[..], 2.0, graphics::Color::from_rgb(255, 0, 55))
+        .unwrap()
+        .build(ctx)
+        .unwrap();
+
+    let input: Vec<_> = frames_sum
+        .iter()
+        .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
+        .collect();
+
+    let output = kopek::fft::fft(&input);
+    let mut x = 0.0;
+    let points: Vec<nalgebra::Point2<f32>> = output
+        .iter()
+        .map(|c| {
+            let p = nalgebra::Point2::new(
+                x,
+                500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
+            );
+            x = x + 1024.0 / sample_size as f32 * 2.0;
+            p
+        })
+        .collect();
+    let frequency_line = mesh_builder
+        .line(&points[..], 2.0, graphics::Color::from_rgb(0, 0, 255))
+        .unwrap()
+        .build(ctx)
+        .unwrap();
+
+    // Frequency bin size is for each element in the output vector
+    // For example if the bin size is 44100 / 1024 = 43.07 and
+    // if the screen width is 1024, then each pixel will represent 43.07Hz
+    let bin_size = 44100.0 / sample_size as f32;
+    let points: Vec<nalgebra::Point2<f32>> = (0..128)
+        .into_iter()
+        .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
+        .collect();
+
+    let mut x = 0;
+    let mut circles: Vec<graphics::Mesh> = vec![];
+    for point in points {
+        circles.push(
+            mesh_builder
+                .circle(
+                    graphics::DrawMode::fill(),
+                    point,
+                    2.0,
+                    1.0,
+                    if x % 5 == 0 {
+                        graphics::Color::from_rgb(255, 0, 0)
+                    } else {
+                        graphics::Color::from_rgb(0, 0, 0)
+                    },
+                )
+                .build(ctx)
+                .unwrap(),
+        );
+        x += 1;
+    }
+
+    (time_line, frequency_line, circles)
 }
 
 impl EventHandler for Game {
