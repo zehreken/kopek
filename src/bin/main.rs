@@ -56,11 +56,14 @@ fn fft_test() {
 }
 
 struct Game {
+    step: u16,
     frames: Vec<[i16; 2]>,
     time_line: graphics::Mesh,
     frequency_line: graphics::Mesh,
     circles: Vec<graphics::Mesh>,
 }
+
+const SAMPLE_SIZE_FACTOR: usize = 64;
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
@@ -74,7 +77,7 @@ impl Game {
             // "sine_440hz_stereo.ogg",
             "dimsunk_funky.ogg",
         ];
-        let sample_size = 1024 * 16;
+        let sample_size = 1024 * SAMPLE_SIZE_FACTOR;
         let start = 1024 * 128;
         let end = start + sample_size;
         let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
@@ -86,9 +89,10 @@ impl Game {
             }
         }
 
-        let (time_line, frequency_line, circles) = analyze(&frames_sum, ctx);
+        let (time_line, frequency_line, circles) = analyze(0, &frames_sum, ctx);
 
         Game {
+            step: 0,
             frames: frames_sum,
             time_line,
             frequency_line,
@@ -98,12 +102,15 @@ impl Game {
 }
 
 fn analyze(
+    step: u16,
     frames_sum: &Vec<[i16; 2]>,
     ctx: &mut Context,
 ) -> (graphics::Mesh, graphics::Mesh, Vec<graphics::Mesh>) {
-    let sample_size = 1024 * 16;
+    let sample_size = 1024;
+    let (start, end) = ((step * 1024) as usize, ((step + 1) * 1024) as usize);
+    let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
     let mut x = 0;
-    let points: Vec<nalgebra::Point2<f32>> = frames_sum
+    let points: Vec<nalgebra::Point2<f32>> = frames_slice
         .iter()
         .map(|frame| {
             x = x + 1;
@@ -119,7 +126,7 @@ fn analyze(
         .build(ctx)
         .unwrap();
 
-    let input: Vec<_> = frames_sum
+    let input: Vec<_> = frames_slice
         .iter()
         .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
         .collect();
@@ -178,8 +185,16 @@ fn analyze(
 }
 
 impl EventHandler for Game {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
+        if self.step < SAMPLE_SIZE_FACTOR as u16 - 1 {
+            let (time_line, frequency_line, circles) = analyze(self.step, &self.frames, ctx);
+            self.time_line = time_line;
+            self.frequency_line = frequency_line;
+            self.circles = circles;
+            self.step += 1;
+        }
+
         Ok(())
     }
 
