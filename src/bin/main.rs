@@ -91,6 +91,8 @@ impl Game {
 
         let (time_line, frequency_line, circles) = analyze(0, &frames_sum, ctx);
 
+        test_ogg(paths[paths.len() - 1]);
+
         Game {
             step: 0,
             frames: frames_sum,
@@ -212,10 +214,13 @@ impl EventHandler for Game {
     }
 }
 
-fn test_ogg() {
-    let domi_frames = kopek::decoder::decode("domi.ogg");
+fn test_ogg<P>(path: P)
+where
+    P: AsRef<std::path::Path>,
+{
+    let frames = kopek::decoder::decode(path);
 
-    let mut cycling = domi_frames.iter().cloned().cycle();
+    let mut cycling = frames.into_iter().clone().cycle();
 
     let host = cpal::default_host();
     let device = host
@@ -265,26 +270,28 @@ fn test_ogg() {
         .play_stream(stream_id)
         .expect("failed to play_stream");
 
-    event_loop.run(move |stream_id, buffer| {
-        let stream_data = match buffer {
-            Ok(data) => data,
-            Err(err) => {
-                eprintln!("an error occurred on stream {:?}: {}", stream_id, err);
-                return;
-            }
-        };
+    let handle = std::thread::spawn(move || {
+        event_loop.run(move |stream_id, buffer| {
+            let stream_data = match buffer {
+                Ok(data) => data,
+                Err(err) => {
+                    eprintln!("an error occurred on stream {:?}: {}", stream_id, err);
+                    return;
+                }
+            };
 
-        match stream_data {
-            cpal::StreamData::Output {
-                buffer: cpal::UnknownTypeOutputBuffer::U16(buffer),
-            } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
-            cpal::StreamData::Output {
-                buffer: cpal::UnknownTypeOutputBuffer::I16(buffer),
-            } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
-            cpal::StreamData::Output {
-                buffer: cpal::UnknownTypeOutputBuffer::F32(buffer),
-            } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
-            _ => (),
-        }
+            match stream_data {
+                cpal::StreamData::Output {
+                    buffer: cpal::UnknownTypeOutputBuffer::U16(buffer),
+                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                cpal::StreamData::Output {
+                    buffer: cpal::UnknownTypeOutputBuffer::I16(buffer),
+                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                cpal::StreamData::Output {
+                    buffer: cpal::UnknownTypeOutputBuffer::F32(buffer),
+                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                _ => (),
+            }
+        });
     });
 }
