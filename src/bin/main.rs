@@ -3,6 +3,7 @@ use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
+use std::sync::mpsc::{Receiver, Sender};
 
 fn main() {
     // Make a Context.
@@ -43,6 +44,7 @@ fn main() {
     }
 }
 
+#[deprecated = "Obsolete, remove after refactoring"]
 fn fft_test() {
     let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
     let input: Vec<_> = frames[..1024]
@@ -57,13 +59,13 @@ fn fft_test() {
 
 struct Game {
     step: u16,
+    receiver: Receiver<Vec<[i16; 2]>>,
     frames: Vec<[i16; 2]>,
     time_line: graphics::Mesh,
     frequency_line: graphics::Mesh,
     circles: Vec<graphics::Mesh>,
 }
 
-const SAMPLE_SIZE_FACTOR: usize = 64;
 
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
@@ -75,10 +77,11 @@ impl Game {
             // "sine_1000.ogg",
             // "sine_10000.ogg",
             // "sine_440hz_stereo.ogg",
-            "dimsunk_funky.ogg",
+            // "dimsunk_funky.ogg",
+            "sample.ogg",
         ];
-        let sample_size = 1024 * SAMPLE_SIZE_FACTOR;
-        let start = 1024 * 128;
+        let sample_size = 1024;
+        let start = 0;
         let end = start + sample_size;
         let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
         for path in paths.iter() {
@@ -89,14 +92,17 @@ impl Game {
             }
         }
 
+        let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
+
         let (start, end) = (0 as usize, 1024 as usize);
         let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
         let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
 
-        play_ogg(paths[paths.len() - 1]);
+        play_ogg(paths[paths.len() - 1], sender);
 
         Game {
             step: 0,
+            receiver,
             frames: frames_sum,
             time_line,
             frequency_line,
@@ -188,17 +194,29 @@ fn analyze(
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
-        if self.step < SAMPLE_SIZE_FACTOR as u16 - 1 {
-            let (start, end) = (
-                (self.step * 1024) as usize,
-                ((self.step + 1) * 1024) as usize,
-            );
-            let frames_slice: Vec<[i16; 2]> = self.frames[start..end].into();
-            let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
+        // if self.step < SAMPLE_SIZE_FACTOR as u16 - 1 {
+        //     let (start, end) = (
+        //         (self.step * 1024) as usize,
+        //         ((self.step + 1) * 1024) as usize,
+        //     );
+        //     let frames_slice: Vec<[i16; 2]> = self.frames[start..end].into();
+        //     let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
+        //     self.time_line = time_line;
+        //     self.frequency_line = frequency_line;
+        //     self.circles = circles;
+        //     self.step += 1;
+        // }
+
+        let mut frames = vec![];
+        for _frames in self.receiver.try_iter() {
+            frames = _frames;
+        }
+
+        if frames.len() > 0 {
+            let (time_line, frequency_line, circles) = analyze(frames, ctx);
             self.time_line = time_line;
             self.frequency_line = frequency_line;
             self.circles = circles;
-            self.step += 1;
         }
 
         Ok(())
@@ -218,7 +236,7 @@ impl EventHandler for Game {
     }
 }
 
-fn play_ogg<P>(path: P)
+fn play_ogg<P>(path: P, sender: Sender<Vec<[i16; 2]>>)
 where
     P: AsRef<std::path::Path>,
 {
@@ -243,8 +261,12 @@ where
     let stream_id = event_loop
         .build_output_stream(&device, &format)
         .expect("Failed to create a voice");
-    fn write_to_buffer<S, I>(mut buffer: cpal::OutputBuffer<S>, channels: usize, sine: &mut I)
-    where
+    fn write_to_buffer<S, I>(
+        mut buffer: cpal::OutputBuffer<S>,
+        channels: usize,
+        sine: &mut I,
+        sender: Sender<Vec<[i16; 2]>>,
+    ) where
         S: cpal::Sample + audrey::sample::FromSample<i16>,
         I: Iterator<Item = [i16; 2]>,
     {
@@ -259,11 +281,15 @@ where
 
             // Stereo
             2 => {
+                let mut frames: Vec<[i16; 2]> = vec![];
                 for (frame, sine_frame) in buffer.chunks_mut(channels).zip(sine) {
                     for (sample, &sine_sample) in frame.iter_mut().zip(&sine_frame) {
                         *sample = audrey::sample::Sample::to_sample(sine_sample);
+                        frames.push([sine_sample; 2]);
                     }
                 }
+                // println!("{:?}", frames.len());
+                sender.send(frames).unwrap();
             }
 
             _ => unimplemented!(),
@@ -287,13 +313,28 @@ where
             match stream_data {
                 cpal::StreamData::Output {
                     buffer: cpal::UnknownTypeOutputBuffer::U16(buffer),
-                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                } => write_to_buffer(
+                    buffer,
+                    usize::from(format.channels),
+                    &mut cycling,
+                    sender.clone(),
+                ),
                 cpal::StreamData::Output {
                     buffer: cpal::UnknownTypeOutputBuffer::I16(buffer),
-                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                } => write_to_buffer(
+                    buffer,
+                    usize::from(format.channels),
+                    &mut cycling,
+                    sender.clone(),
+                ),
                 cpal::StreamData::Output {
                     buffer: cpal::UnknownTypeOutputBuffer::F32(buffer),
-                } => write_to_buffer(buffer, usize::from(format.channels), &mut cycling),
+                } => write_to_buffer(
+                    buffer,
+                    usize::from(format.channels),
+                    &mut cycling,
+                    sender.clone(),
+                ),
                 _ => (),
             }
         });
