@@ -89,9 +89,11 @@ impl Game {
             }
         }
 
-        let (time_line, frequency_line, circles) = analyze(0, &frames_sum, ctx);
+        let (start, end) = (0 as usize, 1024 as usize);
+        let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
+        let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
 
-        test_ogg(paths[paths.len() - 1]);
+        play_ogg(paths[paths.len() - 1]);
 
         Game {
             step: 0,
@@ -104,13 +106,10 @@ impl Game {
 }
 
 fn analyze(
-    step: u16,
-    frames_sum: &Vec<[i16; 2]>,
+    frames_slice: Vec<[i16; 2]>,
     ctx: &mut Context,
 ) -> (graphics::Mesh, graphics::Mesh, Vec<graphics::Mesh>) {
     let sample_size = 1024;
-    let (start, end) = ((step * 1024) as usize, ((step + 1) * 1024) as usize);
-    let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
     let mut x = 0;
     let points: Vec<nalgebra::Point2<f32>> = frames_slice
         .iter()
@@ -190,7 +189,12 @@ impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
         if self.step < SAMPLE_SIZE_FACTOR as u16 - 1 {
-            let (time_line, frequency_line, circles) = analyze(self.step, &self.frames, ctx);
+            let (start, end) = (
+                (self.step * 1024) as usize,
+                ((self.step + 1) * 1024) as usize,
+            );
+            let frames_slice: Vec<[i16; 2]> = self.frames[start..end].into();
+            let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
             self.time_line = time_line;
             self.frequency_line = frequency_line;
             self.circles = circles;
@@ -214,7 +218,7 @@ impl EventHandler for Game {
     }
 }
 
-fn test_ogg<P>(path: P)
+fn play_ogg<P>(path: P)
 where
     P: AsRef<std::path::Path>,
 {
