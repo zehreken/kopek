@@ -66,7 +66,6 @@ struct Game {
     circles: Vec<graphics::Mesh>,
 }
 
-
 impl Game {
     pub fn new(ctx: &mut Context) -> Game {
         let paths = [
@@ -78,7 +77,8 @@ impl Game {
             // "sine_10000.ogg",
             // "sine_440hz_stereo.ogg",
             // "dimsunk_funky.ogg",
-            "sample.ogg",
+            // "sample.ogg",
+            "dimsunk_funky.wav",
         ];
         let sample_size = 1024;
         let start = 0;
