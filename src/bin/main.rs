@@ -147,7 +147,7 @@ fn analyze(
                 x,
                 500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
             );
-            x = x + 1024.0 / sample_size as f32 * 2.0;
+            x = x + 1024.0 / sample_size as f32 * 10.0;
             p
         })
         .collect();
@@ -207,9 +207,20 @@ impl EventHandler for Game {
         //     self.step += 1;
         // }
 
-        let mut frames = vec![];
+        let mut frames_count = 0;
+        let mut frames = vec![[0; 2]; 1024];
         for _frames in self.receiver.try_iter() {
-            frames = _frames;
+            for i in 0..1024 {
+                frames[i][0] += _frames[i][0];
+                frames[i][1] += _frames[i][1];
+            }
+            frames_count += 1;
+        }
+
+        frames_count = (frames_count as f32 / 10.0).ceil() as i16;
+        for f in &mut frames {
+            f[0] = f[0] / frames_count;
+            f[1] = f[1] / frames_count;
         }
 
         if frames.len() > 0 {
