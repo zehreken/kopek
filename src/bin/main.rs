@@ -35,8 +35,6 @@ fn main() {
     // use when setting your game up.
     let mut game = Game::new(&mut ctx);
 
-    // fft_test();
-
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
@@ -44,23 +42,8 @@ fn main() {
     }
 }
 
-#[deprecated = "Obsolete, remove after refactoring"]
-fn fft_test() {
-    let frames = kopek::decoder::decode("sine_440hz_stereo.ogg");
-    let input: Vec<_> = frames[..1024]
-        .iter()
-        .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
-        .collect();
-
-    kopek::fft::show("input: ", &input);
-    let output = kopek::fft::fft(&input);
-    kopek::fft::show("output: ", &output);
-}
-
 struct Game {
-    step: u16,
     receiver: Receiver<Vec<[i16; 2]>>,
-    frames: Vec<[i16; 2]>,
     time_line: graphics::Mesh,
     frequency_line: graphics::Mesh,
     circles: Vec<graphics::Mesh>,
@@ -101,9 +84,7 @@ impl Game {
         play_ogg(paths[paths.len() - 1], sender);
 
         Game {
-            step: 0,
             receiver,
-            frames: frames_sum,
             time_line,
             frequency_line,
             circles,
@@ -160,7 +141,7 @@ fn analyze(
     // Frequency bin size is for each element in the output vector
     // For example if the bin size is 44100 / 1024 = 43.07 and
     // if the screen width is 1024, then each pixel will represent 43.07Hz
-    let bin_size = 44100.0 / sample_size as f32;
+    // let bin_size = 44100.0 / sample_size as f32;
     let points: Vec<nalgebra::Point2<f32>> = (0..128)
         .into_iter()
         .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
@@ -194,19 +175,6 @@ fn analyze(
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
         // Update code here...
-        // if self.step < SAMPLE_SIZE_FACTOR as u16 - 1 {
-        //     let (start, end) = (
-        //         (self.step * 1024) as usize,
-        //         ((self.step + 1) * 1024) as usize,
-        //     );
-        //     let frames_slice: Vec<[i16; 2]> = self.frames[start..end].into();
-        //     let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
-        //     self.time_line = time_line;
-        //     self.frequency_line = frequency_line;
-        //     self.circles = circles;
-        //     self.step += 1;
-        // }
-
         let mut frames_count = 0;
         let mut frames = vec![[0; 2]; 1024];
         for _frames in self.receiver.try_iter() {
@@ -311,7 +279,7 @@ where
         .play_stream(stream_id)
         .expect("failed to play_stream");
 
-    let handle = std::thread::spawn(move || {
+    std::thread::spawn(move || {
         event_loop.run(move |stream_id, buffer| {
             let stream_data = match buffer {
                 Ok(data) => data,
