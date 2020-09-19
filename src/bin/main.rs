@@ -190,8 +190,10 @@ impl EventHandler for Game {
             f[0] = f[0] / frames_count;
             f[1] = f[1] / frames_count;
         }
-
+        puffin::set_scopes_on(true);
+        puffin::profile_scope!("profiling");
         if frames.len() > 0 {
+            puffin::profile_function!();
             let (time_line, frequency_line, circles) = analyze(frames, ctx);
             self.time_line = time_line;
             self.frequency_line = frequency_line;
