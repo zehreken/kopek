@@ -3,9 +3,11 @@ use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
+use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 
 fn main() {
+    let guard = pprof::ProfilerGuard::new(100).unwrap();
     // Make a Context.
     let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
         .build()
@@ -39,6 +41,12 @@ fn main() {
     match event::run(&mut ctx, &mut event_loop, &mut game) {
         Ok(_) => println!("Exited cleanly."),
         Err(e) => println!("Error occured: {}", e),
+    }
+
+    if let Ok(report) = guard.report().build() {
+        println!("report: {}", &report);
+        let file = std::fs::File::create("flamegraph.svg").unwrap();
+        report.flamegraph(file).unwrap();
     }
 }
 
@@ -178,22 +186,21 @@ impl EventHandler for Game {
         let mut frames_count = 0;
         let mut frames = vec![[0; 2]; 1024];
         for _frames in self.receiver.try_iter() {
-            for i in 0..1024 {
-                frames[i][0] += _frames[i][0];
-                frames[i][1] += _frames[i][1];
-            }
-            frames_count += 1;
+            // for i in 0..1024 {
+            //     frames[i][0] += _frames[i][0];
+            //     frames[i][1] += _frames[i][1];
+            // }
+            // frames_count += 1;
+            frames = _frames;
         }
 
-        frames_count = (frames_count as f32 / 10.0).ceil() as i16;
-        for f in &mut frames {
-            f[0] = f[0] / frames_count;
-            f[1] = f[1] / frames_count;
-        }
-        puffin::set_scopes_on(true);
-        puffin::profile_scope!("profiling");
+        // frames_count = (frames_count as f32 / 10.0).ceil() as i16;
+        // for f in &mut frames {
+        //     f[0] = f[0] / frames_count;
+        //     f[1] = f[1] / frames_count;
+        // }
+
         if frames.len() > 0 {
-            puffin::profile_function!();
             let (time_line, frequency_line, circles) = analyze(frames, ctx);
             self.time_line = time_line;
             self.frequency_line = frequency_line;
