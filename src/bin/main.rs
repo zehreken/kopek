@@ -7,7 +7,10 @@ use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 
 fn main() {
-    let guard = pprof::ProfilerGuard::new(100).unwrap();
+    let test = puffin::GlobalProfiler::default();
+    puffin::set_scopes_on(true);
+    puffin::profile_scope!("main");
+    // let guard = pprof::ProfilerGuard::new(100).unwrap();
     // Make a Context.
     let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
         .build()
@@ -43,11 +46,12 @@ fn main() {
         Err(e) => println!("Error occured: {}", e),
     }
 
-    if let Ok(report) = guard.report().build() {
-        println!("report: {}", &report);
-        let file = std::fs::File::create("flamegraph.svg").unwrap();
-        report.flamegraph(file).unwrap();
-    }
+    // if let Ok(report) = guard.report().build() {
+    //     println!("report: {}", &report);
+    //     let file = std::fs::File::create("flamegraph.svg").unwrap();
+    //     report.flamegraph(file).unwrap();
+    // }
+    println!("puffin says: {:?}", test.spike_frame().duration_ns());
 }
 
 struct Game {
