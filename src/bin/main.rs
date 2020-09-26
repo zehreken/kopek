@@ -9,6 +9,7 @@ fn main() {
 
     nannou::app(model).update(update).run();
 
+    println!("not printed!");
     if let Ok(report) = guard.report().build() {
         println!("report: {}", &report);
         let file = std::fs::File::create("flamegraph.svg").unwrap();
@@ -221,7 +222,10 @@ where
                     }
                 }
                 // println!("{:?}", frames.len());
-                sender.send(frames).unwrap();
+                match sender.send(frames) {
+                    Ok(_) => (),
+                    Err(err) => eprintln!("{}", err),
+                }
             }
 
             _ => unimplemented!(),
