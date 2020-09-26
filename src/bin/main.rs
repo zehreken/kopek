@@ -3,55 +3,161 @@ use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 use ggez::conf::{FullscreenType, WindowMode};
 use ggez::event::{self, EventHandler};
 use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
+use nannou::prelude::*;
 use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 
 fn main() {
-    let test = puffin::GlobalProfiler::default();
-    puffin::set_scopes_on(true);
-    puffin::profile_scope!("main");
-    // let guard = pprof::ProfilerGuard::new(100).unwrap();
+    let guard = pprof::ProfilerGuard::new(100).unwrap();
+
+    nannou::app(model).update(update).run();
     // Make a Context.
-    let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
-        .build()
-        .expect("Could not create ggez context!");
+    // let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
+    //     .build()
+    //     .expect("Could not create ggez context!");
 
-    let (width, height) = (1024.0, 600.0);
-    let w_mode = WindowMode {
-        width,
-        height,
-        maximized: false,
-        fullscreen_type: FullscreenType::Windowed,
-        borderless: false,
-        min_width: 0.0,
-        max_width: 0.0,
-        min_height: 0.0,
-        max_height: 0.0,
-        resizable: false,
-    };
+    // let (width, height) = (1024.0, 600.0);
+    // let w_mode = WindowMode {
+    //     width,
+    //     height,
+    //     maximized: false,
+    //     fullscreen_type: FullscreenType::Windowed,
+    //     borderless: false,
+    //     min_width: 0.0,
+    //     max_width: 0.0,
+    //     min_height: 0.0,
+    //     max_height: 0.0,
+    //     resizable: false,
+    // };
 
-    graphics::set_mode(&mut ctx, w_mode).expect("Error while setting window mode");
-    graphics::set_screen_coordinates(&mut ctx, graphics::Rect::new(0.0, 0.0, width, height))
-        .unwrap();
-    graphics::set_window_title(&ctx, "kopek_test");
+    // graphics::set_mode(&mut ctx, w_mode).expect("Error while setting window mode");
+    // graphics::set_screen_coordinates(&mut ctx, graphics::Rect::new(0.0, 0.0, width, height))
+    //     .unwrap();
+    // graphics::set_window_title(&ctx, "kopek_test");
 
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
     // use when setting your game up.
-    let mut game = Game::new(&mut ctx);
+    // let mut game = Game::new(&mut ctx);
 
     // Run!
-    match event::run(&mut ctx, &mut event_loop, &mut game) {
-        Ok(_) => println!("Exited cleanly."),
-        Err(e) => println!("Error occured: {}", e),
+    // match event::run(&mut ctx, &mut event_loop, &mut game) {
+    //     Ok(_) => println!("Exited cleanly."),
+    //     Err(e) => println!("Error occured: {}", e),
+    // }
+
+    if let Ok(report) = guard.report().build() {
+        println!("report: {}", &report);
+        let file = std::fs::File::create("flamegraph.svg").unwrap();
+        report.flamegraph(file).unwrap();
+    }
+}
+
+struct Model {
+    receiver: Receiver<Vec<[i16; 2]>>,
+    time_line: Vec<Point2>,
+    frequency_line: Vec<Point2>,
+    circles: Vec<Point2>,
+}
+
+fn model(app: &App) -> Model {
+    let _window = app
+        .new_window()
+        .size(1024, 600)
+        .title("kopek")
+        .view(view)
+        .build()
+        .unwrap();
+
+    let paths = [
+        // "sine_100.ogg",
+        // "sine_200.ogg",
+        // "sine_440.ogg",
+        // "sine_500.ogg",
+        // "sine_1000.ogg",
+        // "sine_10000.ogg",
+        // "sine_440hz_stereo.ogg",
+        // "dimsunk_funky.ogg",
+        // "sample.ogg",
+        "dimsunk_funky.wav",
+    ];
+
+    let sample_size = 1024;
+    let start = 0;
+    let end = start + sample_size;
+    let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
+    for path in paths.iter() {
+        let frames = &kopek::decoder::decode(path)[start..end];
+        for (i, frame) in frames.iter().enumerate() {
+            frames_sum[i][0] += frame[0] / paths.len() as i16; // First divide by the number of waves and then sum because i16 overflows easily
+            frames_sum[i][1] += frame[1] / paths.len() as i16;
+        }
     }
 
-    // if let Ok(report) = guard.report().build() {
-    //     println!("report: {}", &report);
-    //     let file = std::fs::File::create("flamegraph.svg").unwrap();
-    //     report.flamegraph(file).unwrap();
+    let (start, end) = (0 as usize, 1024 as usize);
+    let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
+    let (time_line, frequency_line, circles) = analyze_two(frames_slice);
+
+    let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
+    play_ogg(paths[paths.len() - 1], sender);
+
+    Model {
+        receiver,
+        time_line,
+        frequency_line,
+        circles,
+    }
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
+    let draw = app.draw();
+
+    draw.background().color(WHITE);
+
+    draw.polyline()
+        .weight(1.0)
+        .points(model.time_line.clone())
+        .color(CRIMSON);
+
+    draw.polyline()
+        .weight(1.0)
+        .points(model.frequency_line.clone())
+        .color(GREEN);
+
+    for circle in &model.circles {
+        draw.ellipse()
+            .w_h(2.0, 2.0)
+            .xy(*circle)
+            .color(BLACK);
+    }
+
+    draw.to_frame(app, &frame).unwrap();
+}
+
+fn update(app: &App, model: &mut Model, _update: Update) {
+    let mut frames_count = 0;
+    let mut frames = vec![[0; 2]; 1024];
+    for _frames in model.receiver.try_iter() {
+        // for i in 0..1024 {
+        //     frames[i][0] += _frames[i][0];
+        //     frames[i][1] += _frames[i][1];
+        // }
+        // frames_count += 1;
+        frames = _frames;
+    }
+
+    // frames_count = (frames_count as f32 / 10.0).ceil() as i16;
+    // for f in &mut frames {
+    //     f[0] = f[0] / frames_count;
+    //     f[1] = f[1] / frames_count;
     // }
-    println!("puffin says: {:?}", test.spike_frame().duration_ns());
+
+    if frames.len() > 0 {
+        let (time_line, frequency_line, circles) = analyze_two(frames);
+        model.time_line = time_line;
+        model.frequency_line = frequency_line;
+        model.circles = circles;
+    }
 }
 
 struct Game {
@@ -104,6 +210,46 @@ impl Game {
     }
 }
 
+fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
+    let sample_size = 1024;
+    let mut x = -513;
+    let points: Vec<Point2> = frames_slice
+        .iter()
+        .map(|frame| {
+            x = x + 1;
+            Point2 {
+                x: x as f32,
+                y: 100.0 + (frame[0] as f32 / 500.0),
+            }
+        })
+        .collect();
+
+    let input: Vec<_> = frames_slice
+        .iter()
+        .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
+        .collect();
+
+    let output = kopek::fft::fft(&input);
+    let mut x = -512.0;
+    let frequency_points: Vec<Point2> = output
+        .iter()
+        .map(|c| {
+            let p = Point2 {
+                x,
+                y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
+            };
+            x = x + 1024.0 / sample_size as f32 * 10.0;
+            p
+        })
+        .collect();
+
+    let mut circles: Vec<Point2> = (0..128)
+        .into_iter()
+        .map(|i| Point2 {x: -512.0 + 8.0 * i as f32, y: -100.0}).collect();
+
+    (points.clone(), frequency_points, circles)
+}
+
 fn analyze(
     frames_slice: Vec<[i16; 2]>,
     ctx: &mut Context,
@@ -128,7 +274,7 @@ fn analyze(
 
     let input: Vec<_> = frames_slice
         .iter()
-        .map(|frame| num::Complex::from(frame[0] as f64 / std::i16::MAX as f64))
+        .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
         .collect();
 
     let output = kopek::fft::fft(&input);
@@ -307,7 +453,7 @@ where
                     buffer: cpal::UnknownTypeOutputBuffer::U16(buffer),
                 } => write_to_buffer(
                     buffer,
-                    usize::from(format.channels),
+                    std::convert::From::from(format.channels),
                     &mut cycling,
                     sender.clone(),
                 ),
@@ -315,7 +461,7 @@ where
                     buffer: cpal::UnknownTypeOutputBuffer::I16(buffer),
                 } => write_to_buffer(
                     buffer,
-                    usize::from(format.channels),
+                    std::convert::From::from(format.channels),
                     &mut cycling,
                     sender.clone(),
                 ),
@@ -323,7 +469,7 @@ where
                     buffer: cpal::UnknownTypeOutputBuffer::F32(buffer),
                 } => write_to_buffer(
                     buffer,
-                    usize::from(format.channels),
+                    std::convert::From::from(format.channels),
                     &mut cycling,
                     sender.clone(),
                 ),
