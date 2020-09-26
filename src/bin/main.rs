@@ -18,9 +18,9 @@ fn main() {
 
 struct Model {
     receiver: Receiver<Vec<[i16; 2]>>,
-    time_line: Vec<Point2>,
-    frequency_line: Vec<Point2>,
-    circles: Vec<Point2>,
+    time_line_points: Vec<Point2>,
+    frequency_line_points: Vec<Point2>,
+    scale_points: Vec<Point2>,
 }
 
 fn model(app: &App) -> Model {
@@ -59,16 +59,16 @@ fn model(app: &App) -> Model {
 
     let (start, end) = (0 as usize, 1024 as usize);
     let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
-    let (time_line, frequency_line, circles) = analyze_two(frames_slice);
+    let (time_line_points, frequency_line_points, scale_points) = analyze(frames_slice);
 
     let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
     play_ogg(paths[paths.len() - 1], sender);
 
     Model {
         receiver,
-        time_line,
-        frequency_line,
-        circles,
+        time_line_points,
+        frequency_line_points,
+        scale_points,
     }
 }
 
@@ -79,16 +79,16 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     draw.polyline()
         .weight(1.0)
-        .points(model.time_line.clone())
+        .points(model.time_line_points.clone())
         .color(CRIMSON);
 
     draw.polyline()
         .weight(1.0)
-        .points(model.frequency_line.clone())
+        .points(model.frequency_line_points.clone())
         .color(GREEN);
 
-    for circle in &model.circles {
-        draw.ellipse().w_h(2.0, 2.0).xy(*circle).color(BLACK);
+    for point in &model.scale_points {
+        draw.rect().w_h(2.0, 10.0).xy(*point).color(BLACK);
     }
 
     draw.to_frame(app, &frame).unwrap();
@@ -113,17 +113,17 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     // }
 
     if frames.len() > 0 {
-        let (time_line, frequency_line, circles) = analyze_two(frames);
-        model.time_line = time_line;
-        model.frequency_line = frequency_line;
-        model.circles = circles;
+        let (time_line, frequency_line, circles) = analyze(frames);
+        model.time_line_points = time_line;
+        model.frequency_line_points = frequency_line;
+        model.scale_points = circles;
     }
 }
 
-fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
+fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
     let sample_size = 1024;
     let mut x = -513;
-    let points: Vec<Point2> = frames_slice
+    let time_line_points: Vec<Point2> = frames_slice
         .iter()
         .map(|frame| {
             x = x + 1;
@@ -141,7 +141,7 @@ fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Po
 
     let output = kopek::fft::fft(&input);
     let mut x = -512.0;
-    let frequency_points: Vec<Point2> = output
+    let frequency_line_points: Vec<Point2> = output
         .iter()
         .map(|c| {
             let p = Point2 {
@@ -157,7 +157,7 @@ fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Po
     // For example if the bin size is 44100 / 1024 = 43.07 and
     // if the screen width is 1024, then each pixel will represent 43.07Hz
     // let bin_size = 44100.0 / sample_size as f32;
-    let mut circles: Vec<Point2> = (0..128)
+    let scale_points: Vec<Point2> = (0..128)
         .into_iter()
         .map(|i| Point2 {
             x: -512.0 + 8.0 * i as f32,
@@ -165,7 +165,7 @@ fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Po
         })
         .collect();
 
-    (points.clone(), frequency_points, circles)
+    (time_line_points, frequency_line_points, scale_points)
 }
 
 fn play_ogg<P>(path: P, sender: Sender<Vec<[i16; 2]>>)
