@@ -1,8 +1,5 @@
 extern crate kopek;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
-use ggez::conf::{FullscreenType, WindowMode};
-use ggez::event::{self, EventHandler};
-use ggez::{graphics, nalgebra, Context, ContextBuilder, GameResult};
 use nannou::prelude::*;
 use pprof;
 use std::sync::mpsc::{Receiver, Sender};
@@ -11,40 +8,6 @@ fn main() {
     let guard = pprof::ProfilerGuard::new(100).unwrap();
 
     nannou::app(model).update(update).run();
-    // Make a Context.
-    // let (mut ctx, mut event_loop) = ContextBuilder::new("kopek_test", "zehreken")
-    //     .build()
-    //     .expect("Could not create ggez context!");
-
-    // let (width, height) = (1024.0, 600.0);
-    // let w_mode = WindowMode {
-    //     width,
-    //     height,
-    //     maximized: false,
-    //     fullscreen_type: FullscreenType::Windowed,
-    //     borderless: false,
-    //     min_width: 0.0,
-    //     max_width: 0.0,
-    //     min_height: 0.0,
-    //     max_height: 0.0,
-    //     resizable: false,
-    // };
-
-    // graphics::set_mode(&mut ctx, w_mode).expect("Error while setting window mode");
-    // graphics::set_screen_coordinates(&mut ctx, graphics::Rect::new(0.0, 0.0, width, height))
-    //     .unwrap();
-    // graphics::set_window_title(&ctx, "kopek_test");
-
-    // Create an instance of your event handler.
-    // Usually, you should provide it with the Context object to
-    // use when setting your game up.
-    // let mut game = Game::new(&mut ctx);
-
-    // Run!
-    // match event::run(&mut ctx, &mut event_loop, &mut game) {
-    //     Ok(_) => println!("Exited cleanly."),
-    //     Err(e) => println!("Error occured: {}", e),
-    // }
 
     if let Ok(report) = guard.report().build() {
         println!("report: {}", &report);
@@ -125,10 +88,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .color(GREEN);
 
     for circle in &model.circles {
-        draw.ellipse()
-            .w_h(2.0, 2.0)
-            .xy(*circle)
-            .color(BLACK);
+        draw.ellipse().w_h(2.0, 2.0).xy(*circle).color(BLACK);
     }
 
     draw.to_frame(app, &frame).unwrap();
@@ -157,56 +117,6 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         model.time_line = time_line;
         model.frequency_line = frequency_line;
         model.circles = circles;
-    }
-}
-
-struct Game {
-    receiver: Receiver<Vec<[i16; 2]>>,
-    time_line: graphics::Mesh,
-    frequency_line: graphics::Mesh,
-    circles: Vec<graphics::Mesh>,
-}
-
-impl Game {
-    pub fn new(ctx: &mut Context) -> Game {
-        let paths = [
-            // "sine_100.ogg",
-            // "sine_200.ogg",
-            // "sine_440.ogg",
-            // "sine_500.ogg",
-            // "sine_1000.ogg",
-            // "sine_10000.ogg",
-            // "sine_440hz_stereo.ogg",
-            // "dimsunk_funky.ogg",
-            // "sample.ogg",
-            "dimsunk_funky.wav",
-        ];
-        let sample_size = 1024;
-        let start = 0;
-        let end = start + sample_size;
-        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
-        for path in paths.iter() {
-            let frames = &kopek::decoder::decode(path)[start..end];
-            for (i, frame) in frames.iter().enumerate() {
-                frames_sum[i][0] += frame[0] / paths.len() as i16; // First divide by the number of waves and then sum because i16 overflows easily
-                frames_sum[i][1] += frame[1] / paths.len() as i16;
-            }
-        }
-
-        let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
-
-        let (start, end) = (0 as usize, 1024 as usize);
-        let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
-        let (time_line, frequency_line, circles) = analyze(frames_slice, ctx);
-
-        play_ogg(paths[paths.len() - 1], sender);
-
-        Game {
-            receiver,
-            time_line,
-            frequency_line,
-            circles,
-        }
     }
 }
 
@@ -243,135 +153,19 @@ fn analyze_two(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Po
         })
         .collect();
 
-    let mut circles: Vec<Point2> = (0..128)
-        .into_iter()
-        .map(|i| Point2 {x: -512.0 + 8.0 * i as f32, y: -100.0}).collect();
-
-    (points.clone(), frequency_points, circles)
-}
-
-fn analyze(
-    frames_slice: Vec<[i16; 2]>,
-    ctx: &mut Context,
-) -> (graphics::Mesh, graphics::Mesh, Vec<graphics::Mesh>) {
-    let sample_size = 1024;
-    let mut x = 0;
-    let points: Vec<nalgebra::Point2<f32>> = frames_slice
-        .iter()
-        .map(|frame| {
-            x = x + 1;
-            nalgebra::Point2::new(x as f32, 100.0 + (frame[0] as f32) / 500.0)
-        })
-        .collect();
-
-    let mut mesh_builder = graphics::MeshBuilder::new();
-
-    let time_line = mesh_builder
-        .line(&points[..], 2.0, graphics::Color::from_rgb(255, 0, 55))
-        .unwrap()
-        .build(ctx)
-        .unwrap();
-
-    let input: Vec<_> = frames_slice
-        .iter()
-        .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
-        .collect();
-
-    let output = kopek::fft::fft(&input);
-    let mut x = 0.0;
-    let points: Vec<nalgebra::Point2<f32>> = output
-        .iter()
-        .map(|c| {
-            let p = nalgebra::Point2::new(
-                x,
-                500.0 - ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
-            );
-            x = x + 1024.0 / sample_size as f32 * 10.0;
-            p
-        })
-        .collect();
-    let frequency_line = mesh_builder
-        .line(&points[..], 2.0, graphics::Color::from_rgb(0, 0, 255))
-        .unwrap()
-        .build(ctx)
-        .unwrap();
-
     // Frequency bin size is for each element in the output vector
     // For example if the bin size is 44100 / 1024 = 43.07 and
     // if the screen width is 1024, then each pixel will represent 43.07Hz
     // let bin_size = 44100.0 / sample_size as f32;
-    let points: Vec<nalgebra::Point2<f32>> = (0..128)
+    let mut circles: Vec<Point2> = (0..128)
         .into_iter()
-        .map(|i| nalgebra::Point2::new(8.0 * i as f32, 480.0))
+        .map(|i| Point2 {
+            x: -512.0 + 8.0 * i as f32,
+            y: -100.0,
+        })
         .collect();
 
-    let mut x = 0;
-    let mut circles: Vec<graphics::Mesh> = vec![];
-    for point in points {
-        circles.push(
-            mesh_builder
-                .circle(
-                    graphics::DrawMode::fill(),
-                    point,
-                    2.0,
-                    1.0,
-                    if x % 5 == 0 {
-                        graphics::Color::from_rgb(255, 0, 0)
-                    } else {
-                        graphics::Color::from_rgb(0, 0, 0)
-                    },
-                )
-                .build(ctx)
-                .unwrap(),
-        );
-        x += 1;
-    }
-
-    (time_line, frequency_line, circles)
-}
-
-impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
-        // Update code here...
-        let mut frames_count = 0;
-        let mut frames = vec![[0; 2]; 1024];
-        for _frames in self.receiver.try_iter() {
-            // for i in 0..1024 {
-            //     frames[i][0] += _frames[i][0];
-            //     frames[i][1] += _frames[i][1];
-            // }
-            // frames_count += 1;
-            frames = _frames;
-        }
-
-        // frames_count = (frames_count as f32 / 10.0).ceil() as i16;
-        // for f in &mut frames {
-        //     f[0] = f[0] / frames_count;
-        //     f[1] = f[1] / frames_count;
-        // }
-
-        if frames.len() > 0 {
-            let (time_line, frequency_line, circles) = analyze(frames, ctx);
-            self.time_line = time_line;
-            self.frequency_line = frequency_line;
-            self.circles = circles;
-        }
-
-        Ok(())
-    }
-
-    fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::WHITE);
-        // Draw code here...
-        graphics::draw(ctx, &self.time_line, graphics::DrawParam::default()).unwrap();
-        graphics::draw(ctx, &self.frequency_line, graphics::DrawParam::default()).unwrap();
-        for circle in &self.circles {
-            graphics::draw(ctx, circle, graphics::DrawParam::default()).unwrap();
-        }
-
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        graphics::present(ctx)
-    }
+    (points.clone(), frequency_points, circles)
 }
 
 fn play_ogg<P>(path: P, sender: Sender<Vec<[i16; 2]>>)

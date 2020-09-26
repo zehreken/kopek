@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 cpal = "0.10.0"
 audrey = "0.2.0"
-ggez = "0.5.1"
 nannou = "0.14.1"
 num = "0.3.0"
 pprof = { version = "0.3", features = ["flamegraph"] } 
