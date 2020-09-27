@@ -5,16 +5,7 @@ use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 
 fn main() {
-    let guard = pprof::ProfilerGuard::new(100).unwrap();
-
-    nannou::app(model).update(update).run();
-
-    println!("not printed!");
-    if let Ok(report) = guard.report().build() {
-        println!("report: {}", &report);
-        let file = std::fs::File::create("flamegraph.svg").unwrap();
-        report.flamegraph(file).unwrap();
-    }
+    nannou::app(model).update(update).exit(exit).run();
 }
 
 struct Model {
@@ -22,12 +13,16 @@ struct Model {
     time_line_points: Vec<Point2>,
     frequency_line_points: Vec<Point2>,
     scale_points: Vec<Point2>,
+    guard: pprof::ProfilerGuard<'static>,
 }
 
 fn model(app: &App) -> Model {
+    // Create pprof guard here
+    let guard = pprof::ProfilerGuard::new(100).unwrap();
+
     let _window = app
         .new_window()
-        .size(1024, 600)
+        .size(1100, 600)
         .title("kopek")
         .view(view)
         .build()
@@ -43,7 +38,7 @@ fn model(app: &App) -> Model {
         // "sine_440hz_stereo.ogg",
         // "dimsunk_funky.ogg",
         // "sample.ogg",
-        "dimsunk_funky.wav",
+        "stress_free.wav",
     ];
 
     let sample_size = 1024;
@@ -70,6 +65,7 @@ fn model(app: &App) -> Model {
         time_line_points,
         frequency_line_points,
         scale_points,
+        guard,
     }
 }
 
@@ -118,6 +114,14 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         model.time_line_points = time_line;
         model.frequency_line_points = frequency_line;
         model.scale_points = circles;
+    }
+}
+
+fn exit(_app: &App, model: Model) {
+    if let Ok(report) = model.guard.report().build() {
+        println!("report: {}", &report);
+        let file = std::fs::File::create("nannou.svg").unwrap();
+        report.flamegraph(file).unwrap();
     }
 }
 
