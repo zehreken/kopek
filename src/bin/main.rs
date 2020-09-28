@@ -118,10 +118,12 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 }
 
 fn exit(_app: &App, model: Model) {
-    if let Ok(report) = model.guard.report().build() {
-        println!("report: {}", &report);
-        let file = std::fs::File::create("nannou.svg").unwrap();
-        report.flamegraph(file).unwrap();
+    if cfg!(debug_assertions) {
+        if let Ok(report) = model.guard.report().build() {
+            println!("report: {}", &report);
+            let file = std::fs::File::create("nannou.svg").unwrap();
+            report.flamegraph(file).unwrap();
+        }
     }
 }
 
