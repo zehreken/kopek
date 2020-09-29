@@ -17,6 +17,7 @@ struct Model {
 }
 
 fn model(app: &App) -> Model {
+    // app.set_loop_mode(LoopMode::rate_rate_fps(30.0)); // This is buggy in current version of nannou
     // Create pprof guard here
     let guard = pprof::ProfilerGuard::new(100).unwrap();
 
@@ -69,28 +70,6 @@ fn model(app: &App) -> Model {
     }
 }
 
-fn view(app: &App, model: &Model, frame: Frame) {
-    let draw = app.draw();
-
-    draw.background().color(WHITE);
-
-    draw.polyline()
-        .weight(1.0)
-        .points(model.time_line_points.clone())
-        .color(CRIMSON);
-
-    draw.polyline()
-        .weight(1.0)
-        .points(model.frequency_line_points.clone())
-        .color(GREEN);
-
-    for point in &model.scale_points {
-        draw.rect().w_h(2.0, 10.0).xy(*point).color(BLACK);
-    }
-
-    draw.to_frame(app, &frame).unwrap();
-}
-
 fn update(app: &App, model: &mut Model, _update: Update) {
     let mut frames_count = 0;
     let mut frames = vec![[0; 2]; 1024];
@@ -115,6 +94,32 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         model.frequency_line_points = frequency_line;
         model.scale_points = circles;
     }
+
+    std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
+    let draw = app.draw();
+
+    draw.background().color(WHITE);
+
+    draw.polyline()
+        .weight(1.0)
+        .points(model.time_line_points.clone())
+        .color(CRIMSON);
+
+    draw.polyline()
+        .weight(1.0)
+        .points(model.frequency_line_points.clone())
+        .color(GREEN);
+
+    for point in &model.scale_points {
+        draw.rect().w_h(2.0, 10.0).xy(*point).color(BLACK);
+    }
+
+    draw.to_frame(app, &frame).unwrap();
+
+    // std::thread::sleep(std::time::Duration::from_millis(33));
 }
 
 fn exit(_app: &App, model: Model) {
