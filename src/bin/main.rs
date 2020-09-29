@@ -54,7 +54,6 @@ fn model(app: &App) -> Model {
         }
     }
 
-    let (start, end) = (0 as usize, 1024 as usize);
     let frames_slice: Vec<[i16; 2]> = frames_sum[start..end].into();
     let (time_line_points, frequency_line_points, scale_points) = analyze(frames_slice);
 
@@ -118,8 +117,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
     }
 
     draw.to_frame(app, &frame).unwrap();
-
-    // std::thread::sleep(std::time::Duration::from_millis(33));
 }
 
 fn exit(_app: &App, model: Model) {
@@ -153,6 +150,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
 
     let output = kopek::fft::fft(&input);
     let mut x = -512.0;
+    let x_scale = 1.0;
     let frequency_line_points: Vec<Point2> = output
         .iter()
         .map(|c| {
@@ -160,7 +158,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
                 x,
                 y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
             };
-            x = x + 1024.0 / sample_size as f32 * 10.0;
+            x = x + 1024.0 / sample_size as f32 * x_scale;
             p
         })
         .collect();
