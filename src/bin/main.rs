@@ -113,8 +113,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .points(model.frequency_line_points.clone())
         .color(GREEN);
 
-    for point in &model.scale_points {
-        draw.rect().w_h(2.0, 10.0).xy(*point).color(BLACK);
+    for (i, point) in model.scale_points.iter().enumerate() {
+        draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
+        draw.text(&format!("{}hz", i * 43 * 2 * 8)).font_size(6).x_y(point.x, -80.0).color(BLACK);
     }
 
     draw.to_frame(app, &frame).unwrap();
@@ -151,7 +152,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
 
     let output = kopek::fft::fft(&input);
     let mut x = -512.0;
-    let x_scale = 1.0;
+    let x_scale = 4.0;
     let frequency_line_points: Vec<Point2> = output
         .iter()
         .map(|c| {
@@ -171,7 +172,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
     let scale_points: Vec<Point2> = (0..128)
         .into_iter()
         .map(|i| Point2 {
-            x: -512.0 + 8.0 * i as f32,
+            x: -512.0 + 8.0 * i as f32 * x_scale,
             y: -100.0,
         })
         .collect();
