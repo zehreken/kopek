@@ -40,6 +40,7 @@ fn model(app: &App) -> Model {
         // "dimsunk_funky.ogg",
         // "sample.ogg",
         // "stress_free.wav",
+        // "overture.wav",
         "100_200_400_1000_10000.wav",
     ];
 
@@ -98,6 +99,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
 }
 
+const BIN_SIZE: f32 = 22050.0 / 1024.0;
+const X_SCALE: f32 = 4.0;
+
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
@@ -115,7 +119,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for (i, point) in model.scale_points.iter().enumerate() {
         draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
-        draw.text(&format!("{}hz", i * 43 * 2 * 8)).font_size(6).x_y(point.x, -80.0).color(BLACK);
+        let bin_text = i as f32 * BIN_SIZE * X_SCALE * 8.0;
+        draw.text(&format!("{:0.0}hz", bin_text))
+            .font_size(6)
+            .x_y(point.x, -80.0)
+            .color(BLACK);
     }
 
     draw.to_frame(app, &frame).unwrap();
@@ -152,7 +160,6 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
 
     let output = kopek::fft::fft(&input);
     let mut x = -512.0;
-    let x_scale = 4.0;
     let frequency_line_points: Vec<Point2> = output
         .iter()
         .map(|c| {
@@ -160,19 +167,19 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
                 x,
                 y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
             };
-            x = x + 1024.0 / sample_size as f32 * x_scale;
+            x = x + 1024.0 / sample_size as f32 * X_SCALE;
             p
         })
         .collect();
 
+    // First, the total range is 22050 if sample rate is 44100
     // Frequency bin size is for each element in the output vector
-    // For example if the bin size is 44100 / 1024 = 43.07 and
-    // if the screen width is 1024, then each pixel will represent 43.07Hz
-    // let bin_size = 44100.0 / sample_size as f32;
+    // For example if the bin size is 22050 / 1024 = 21.53 and
+    // If the screen width is 1024, then each pixel will represent 21.53Hz
     let scale_points: Vec<Point2> = (0..128)
         .into_iter()
         .map(|i| Point2 {
-            x: -512.0 + 8.0 * i as f32 * x_scale,
+            x: -512.0 + 8.0 * i as f32 * X_SCALE,
             y: -100.0,
         })
         .collect();
