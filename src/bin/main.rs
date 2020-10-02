@@ -112,10 +112,19 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .points(model.time_line_points.clone())
         .color(CRIMSON);
 
-    draw.polyline()
-        .weight(1.0)
-        .points(model.frequency_line_points.clone())
-        .color(GREEN);
+    // draw.polyline()
+    //     .weight(1.0)
+    //     .points(model.frequency_line_points.clone())
+    //     .color(GREEN);
+
+    let average_bins = get_spectrum(model);
+    // draw.polyline().weight(1.0).points(average_bins).color(RED);
+    for bin in average_bins {
+        draw.rect()
+            .x_y(bin.x, -100.0)
+            .w_h(90.0, 200.0 - bin.y.abs())
+            .color(GREEN);
+    }
 
     for (i, point) in model.scale_points.iter().enumerate() {
         draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
@@ -127,6 +136,37 @@ fn view(app: &App, model: &Model, frame: Frame) {
     }
 
     draw.to_frame(app, &frame).unwrap();
+}
+
+fn get_spectrum(model: &Model) -> Vec<Point2> {
+    // implement another view to have non-linear bin sizes
+    // e.g. 32-64-125-250-500-1k-2k-4k-8k-16k Hz
+    // get half of model.frequency_line_points
+    let mut sum = 2;
+    let bin_sizes: Vec<i32> = (1..9)
+        .map(|i| {
+            sum += 2_i32.pow(i);
+            sum
+        })
+        .collect();
+    // After this bin sizes are 4, 4, 8, 16, 32, 64, 128, 256. In total 512 data points, half of frequency_line_points
+    let mut bin_averages: Vec<Point2> = vec![];
+    let mut start_index = 0;
+    for (i, end_index) in bin_sizes.into_iter().enumerate() {
+        let sum: &f32 = &model.frequency_line_points[start_index as usize..end_index as usize]
+            .iter()
+            .map(|v| v.y)
+            .sum();
+        let average = sum / (end_index - start_index) as f32;
+        // println!("{} {} average: {}", start_index, end_index, average);
+        bin_averages.push(Point2 {
+            x: -512.0 + 100.0 * i as f32,
+            y: average,
+        });
+        start_index = end_index;
+    }
+
+    bin_averages
 }
 
 fn exit(_app: &App, model: Model) {
