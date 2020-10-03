@@ -39,9 +39,9 @@ fn model(app: &App) -> Model {
         // "sine_440hz_stereo.ogg",
         // "dimsunk_funky.ogg",
         // "sample.ogg",
-        // "stress_free.wav",
+        "stress_free.wav",
         // "overture.wav",
-        "100_200_400_1000_10000.wav",
+        // "100_200_400_1000_10000.wav",
     ];
 
     let sample_size = 1024;
@@ -142,13 +142,14 @@ fn get_spectrum(model: &Model) -> Vec<Point2> {
     // implement another view to have non-linear bin sizes
     // e.g. 32-64-125-250-500-1k-2k-4k-8k-16k Hz
     // get half of model.frequency_line_points
-    let mut sum = 2;
-    let bin_sizes: Vec<i32> = (1..9)
+    let mut sum = 1;
+    let bin_sizes: Vec<i32> = (0..9)
         .map(|i| {
             sum += 2_i32.pow(i);
             sum
         })
         .collect();
+    // println!("bin_sizes: {:?}", bin_sizes);
     // After this bin sizes are 4, 4, 8, 16, 32, 64, 128, 256. In total 512 data points, half of frequency_line_points
     let mut bin_averages: Vec<Point2> = vec![];
     let mut start_index = 0;
@@ -160,7 +161,7 @@ fn get_spectrum(model: &Model) -> Vec<Point2> {
         let average = sum / (end_index - start_index) as f32;
         // println!("{} {} average: {}", start_index, end_index, average);
         bin_averages.push(Point2 {
-            x: -512.0 + 100.0 * i as f32,
+            x: -462.0 + 100.0 * i as f32,
             y: average,
         });
         start_index = end_index;
