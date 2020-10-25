@@ -3,10 +3,11 @@ use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
 use nannou::prelude::*;
 use pprof;
 use std::sync::mpsc::{Receiver, Sender};
+mod feedback;
 
 fn main() {
-    // feedback::main();
-    nannou::app(model).update(update).exit(exit).run();
+    feedback::start();
+    // nannou::app(model).update(update).exit(exit).run();
 }
 
 struct Model {
