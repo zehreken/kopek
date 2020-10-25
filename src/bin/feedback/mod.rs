@@ -14,6 +14,7 @@ struct InputModel {
 
 struct Model {
     input_stream: audio::Stream<InputModel>,
+    consumer: Consumer<f32>,
 }
 
 fn model(app: &App) -> Model {
@@ -21,6 +22,7 @@ fn model(app: &App) -> Model {
         .new_window()
         .size(1100, 600)
         .title("kopek")
+        .view(view)
         .build()
         .unwrap();
 
@@ -36,15 +38,41 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    Model { input_stream }
+    Model {
+        input_stream,
+        consumer,
+    }
 }
 
 fn capture(model: &mut InputModel, buffer: &Buffer) {
     for frame in buffer.frames() {
         for sample in frame {
-            model.producer.push(*sample).unwrap();
+            let r = model.producer.push(*sample);
+            match r {
+                Ok(_) => (),
+                Err(_) => (),
+            }
         }
     }
 }
 
-fn update(app: &App, model: &mut Model, _udpate: Update) {}
+fn update(_app: &App, model: &mut Model, _udpate: Update) {
+    let mut frames = vec![];
+    for _ in 0..model.consumer.len() {
+        let recorded_sample = match model.consumer.pop() {
+            Some(f) => f,
+            None => 0.0,
+        };
+        frames.push(recorded_sample);
+    }
+
+    println!("frames count: {}", frames.len());
+
+    std::thread::sleep(std::time::Duration::from_millis(33));
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
+    let draw = app.draw();
+
+    draw.background().color(WHITE);
+}
