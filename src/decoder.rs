@@ -32,8 +32,8 @@ where
 
 fn analyze(frame: Vec<[i16; 2]>) {}
 
-// Assumes that sample rate is 44100 Hz
-pub fn get_duration_in_seconds(frames: Vec<[i16; 2]>) -> u32 {
+// Under the assumption that sample rate is 44100 Hz
+pub fn get_duration_in_seconds<T>(frames: Vec<T>) -> u32 {
     frames.len() as u32 / 44100
 }
 
