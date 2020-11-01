@@ -72,8 +72,10 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
         frames.push(recorded_sample);
     }
 
-    let (time_line, frequency_line, scale_points) = analyze(frames);
-    model.time_line_points = time_line;
+    model.time_line_points = get_waveform(&frames);
+
+    let (frequency_line, scale_points) = analyze(frames);
+
     model.frequency_line_points = frequency_line;
     model.scale_points = scale_points;
     // println!("frames count: {}", frames.len());
@@ -156,12 +158,11 @@ fn get_spectrum(model: &Model) -> Vec<Point2> {
 const BIN_SIZE: f32 = 22050.0 / 2048.0;
 const X_SCALE: f32 = 4.0;
 
-fn analyze(frames_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
-    let sample_size = 1024 * 2;
+fn get_waveform(frame_slice: &Vec<f32>) -> Vec<Point2> {
     let mut x = -513;
-    let time_line_points: Vec<Point2> = frames_slice
+    let waveform_points = frame_slice
         .iter()
-        .step_by(2) // Only visualize one channel
+        .step_by(2)
         .map(|frame| {
             x = x + 1;
             Point2 {
@@ -171,7 +172,13 @@ fn analyze(frames_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
         })
         .collect();
 
-    let input: Vec<_> = frames_slice
+    waveform_points
+}
+
+fn analyze(frame_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>) {
+    let sample_size = 1024 * 2;
+
+    let input: Vec<_> = frame_slice
         .iter()
         .map(|frame| std::convert::From::from(*frame as f64))
         .collect();
@@ -202,5 +209,5 @@ fn analyze(frames_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2>) {
         })
         .collect();
 
-    (time_line_points, frequency_line_points, scale_points)
+    (frequency_line_points, scale_points)
 }
