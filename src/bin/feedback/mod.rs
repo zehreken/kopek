@@ -73,11 +73,9 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
     }
 
     model.time_line_points = get_waveform(&frames);
+    model.frequency_line_points = get_frequency_domain_graph(&frames);
+    model.scale_points = get_scale(&frames);
 
-    let (frequency_line, scale_points) = analyze(frames);
-
-    model.frequency_line_points = frequency_line;
-    model.scale_points = scale_points;
     // println!("frames count: {}", frames.len());
 
     std::thread::sleep(std::time::Duration::from_millis(33));
@@ -175,7 +173,7 @@ fn get_waveform(frame_slice: &Vec<f32>) -> Vec<Point2> {
     waveform_points
 }
 
-fn analyze(frame_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>) {
+fn get_frequency_domain_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
     let sample_size = 1024 * 2;
 
     let input: Vec<_> = frame_slice
@@ -185,7 +183,7 @@ fn analyze(frame_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>) {
 
     let output = kopek::fft::fft(&input);
     let mut x = -512.0;
-    let frequency_line_points: Vec<Point2> = output
+    let frequency_graph_points: Vec<Point2> = output
         .iter()
         .map(|c| {
             let p = Point2 {
@@ -197,6 +195,10 @@ fn analyze(frame_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>) {
         })
         .collect();
 
+    frequency_graph_points
+}
+
+fn get_scale(frame_slice: &Vec<f32>) -> Vec<Point2> {
     // First, the total range is 22050 if sample rate is 44100
     // Frequency bin size is for each element in the output vector
     // For example if the bin size is 22050 / 1024 = 21.53 and
@@ -209,5 +211,5 @@ fn analyze(frame_slice: Vec<f32>) -> (Vec<Point2>, Vec<Point2>) {
         })
         .collect();
 
-    (frequency_line_points, scale_points)
+    scale_points
 }
