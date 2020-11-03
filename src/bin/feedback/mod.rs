@@ -96,7 +96,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     //     .points(model.frequency_line_points.clone())
     //     .color(GREEN);
 
-    if model.frequency_line_points.len() > 0 {
+    if model.frequency_line_points.len() == 2048 {
         let average_bins = get_spectrum(model);
         // draw.polyline().weight(1.0).points(average_bins).color(RED);
         for bin in average_bins {
