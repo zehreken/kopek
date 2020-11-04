@@ -73,8 +73,8 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
     }
 
     model.time_line_points = get_waveform(&frames);
-    model.frequency_line_points = get_frequency_domain_graph(&frames);
-    model.scale_points = get_scale(&frames);
+    model.frequency_line_points = get_frequency_domain_graph(&frames, 4.0);
+    model.scale_points = get_scale();
 
     // println!("frames count: {}", frames.len());
 
@@ -97,7 +97,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     //     .color(GREEN);
 
     if model.frequency_line_points.len() == 2048 {
-        let average_bins = get_spectrum(model);
+        let average_bins = get_spectrum(&model.frequency_line_points);
         // draw.polyline().weight(1.0).points(average_bins).color(RED);
         for bin in average_bins {
             draw.rect()
@@ -107,6 +107,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
     }
 
+    // Draw the scales, binsize calculation is probably wrong
     for (i, point) in model.scale_points.iter().enumerate() {
         draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
         let bin_text = i as f32 * BIN_SIZE * X_SCALE * 8.0;
@@ -121,7 +122,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
     draw.background().color(WHITE);
 }
 
-fn get_spectrum(model: &Model) -> Vec<Point2> {
+fn get_spectrum_analysis() {}
+
+fn get_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point2> {
     // implement another view to have non-linear bin sizes
     // e.g. 32-64-125-250-500-1k-2k-4k-8k-16k Hz
     // get half of model.frequency_line_points
@@ -137,7 +140,7 @@ fn get_spectrum(model: &Model) -> Vec<Point2> {
     let mut bin_averages: Vec<Point2> = vec![];
     let mut start_index = 0;
     for (i, end_index) in bin_sizes.into_iter().enumerate() {
-        let sum: &f32 = &model.frequency_line_points[start_index as usize..end_index as usize]
+        let sum: f32 = frequency_line_points[start_index as usize..end_index as usize]
             .iter()
             .map(|v| v.y)
             .sum();
@@ -173,7 +176,7 @@ fn get_waveform(frame_slice: &Vec<f32>) -> Vec<Point2> {
     waveform_points
 }
 
-fn get_frequency_domain_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
+fn get_frequency_domain_graph(frame_slice: &Vec<f32>, scale: f32) -> Vec<Point2> {
     let sample_size = 1024 * 2;
 
     let input: Vec<_> = frame_slice
@@ -188,7 +191,7 @@ fn get_frequency_domain_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
         .map(|c| {
             let p = Point2 {
                 x,
-                y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
+                y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(scale)).sqrt(),
             };
             x = x + 2048.0 / sample_size as f32 * X_SCALE;
             p
@@ -198,7 +201,8 @@ fn get_frequency_domain_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
     frequency_graph_points
 }
 
-fn get_scale(frame_slice: &Vec<f32>) -> Vec<Point2> {
+// This is just a equally spaced scale, ruler, nothing fancy
+fn get_scale() -> Vec<Point2> {
     // First, the total range is 22050 if sample rate is 44100
     // Frequency bin size is for each element in the output vector
     // For example if the bin size is 22050 / 1024 = 21.53 and
