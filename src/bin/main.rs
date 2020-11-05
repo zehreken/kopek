@@ -41,9 +41,9 @@ fn model(app: &App) -> Model {
         // "sine_440hz_stereo.ogg",
         // "dimsunk_funky.ogg",
         // "sample.ogg",
-        "stress_free.wav",
+        // "stress_free.wav",
         // "overture.wav",
-        // "100_200_400_1000_10000.wav",
+        "100_200_400_1000_10000.wav",
     ];
 
     let sample_size = 1024;

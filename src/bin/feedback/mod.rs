@@ -3,6 +3,7 @@ use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
+mod utils;
 
 pub fn start() {
     nannou::app(model).update(update).run();
@@ -72,9 +73,9 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
         frames.push(recorded_sample);
     }
 
-    model.time_line_points = get_waveform(&frames);
+    model.time_line_points = get_waveform_graph(&frames);
     model.frequency_line_points = get_frequency_domain_graph(&frames, 4.0);
-    model.scale_points = get_scale();
+    model.scale_points = utils::get_scale(X_SCALE);
 
     // println!("frames count: {}", frames.len());
 
@@ -91,10 +92,12 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .points(model.time_line_points.clone())
         .color(CRIMSON);
 
-    // draw.polyline()
-    //     .weight(1.0)
-    //     .points(model.frequency_line_points.clone())
-    //     .color(GREEN);
+    // if model.frequency_line_points.len() == 2048 {
+    //     draw.polyline()
+    //         .weight(1.0)
+    //         .points(model.frequency_line_points.clone())
+    //         .color(GREEN);
+    // }
 
     if model.frequency_line_points.len() == 2048 {
         let average_bins = get_spectrum(&model.frequency_line_points);
@@ -159,7 +162,7 @@ fn get_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point2> {
 const BIN_SIZE: f32 = 22050.0 / 2048.0;
 const X_SCALE: f32 = 4.0;
 
-fn get_waveform(frame_slice: &Vec<f32>) -> Vec<Point2> {
+fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
     let mut x = -513;
     let waveform_points = frame_slice
         .iter()
@@ -199,21 +202,4 @@ fn get_frequency_domain_graph(frame_slice: &Vec<f32>, scale: f32) -> Vec<Point2>
         .collect();
 
     frequency_graph_points
-}
-
-// This is just a equally spaced scale, ruler, nothing fancy
-fn get_scale() -> Vec<Point2> {
-    // First, the total range is 22050 if sample rate is 44100
-    // Frequency bin size is for each element in the output vector
-    // For example if the bin size is 22050 / 1024 = 21.53 and
-    // If the screen width is 1024, then each pixel will represent 21.53Hz
-    let scale_points: Vec<Point2> = (0..128)
-        .into_iter()
-        .map(|i| Point2 {
-            x: -512.0 + 8.0 * i as f32 * X_SCALE,
-            y: -100.0,
-        })
-        .collect();
-
-    scale_points
 }
