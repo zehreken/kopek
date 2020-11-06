@@ -3,6 +3,7 @@ use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
+mod consts;
 mod utils;
 
 pub fn start() {
@@ -24,7 +25,7 @@ struct Model {
 fn model(app: &App) -> Model {
     let _window = app
         .new_window()
-        .size(1100, 600)
+        .size(consts::SCREEN_WIDTH, consts::SCREEN_HEIGHT)
         .title("kopek")
         .view(view)
         .build()
@@ -64,7 +65,7 @@ fn capture(model: &mut InputModel, buffer: &Buffer) {
 }
 
 fn update(_app: &App, model: &mut Model, _udpate: Update) {
-    let mut frames = vec![];
+    let mut frames: Vec<f32> = vec![];
     for _ in 0..model.consumer.len() {
         let recorded_sample = match model.consumer.pop() {
             Some(f) => f,
@@ -73,9 +74,15 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
         frames.push(recorded_sample);
     }
 
+    let fft_input: Vec<_> = frames
+        .iter()
+        .map(|frame| std::convert::From::from(*frame as f64))
+        .collect();
+    let fft_output = kopek::fft::fft(&fft_input);
+
     model.time_line_points = get_waveform_graph(&frames);
-    model.frequency_line_points = get_frequency_domain_graph(&frames, 4.0);
-    model.scale_points = utils::get_scale(X_SCALE);
+    model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 4.0);
+    model.scale_points = utils::get_scale(consts::X_SCALE);
 
     // println!("frames count: {}", frames.len());
 
@@ -113,7 +120,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
     // Draw the scales, binsize calculation is probably wrong
     for (i, point) in model.scale_points.iter().enumerate() {
         draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
-        let bin_text = i as f32 * BIN_SIZE * X_SCALE * 8.0;
+        let bin_text = i as f32 * consts::BIN_SIZE * consts::X_SCALE * 8.0;
         draw.text(&format!("{:0.0}hz", bin_text))
             .font_size(6)
             .x_y(point.x, -80.0)
@@ -159,9 +166,6 @@ fn get_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point2> {
     bin_averages
 }
 
-const BIN_SIZE: f32 = 22050.0 / 2048.0;
-const X_SCALE: f32 = 4.0;
-
 fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
     let mut x = -513;
     let waveform_points = frame_slice
@@ -177,29 +181,4 @@ fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
         .collect();
 
     waveform_points
-}
-
-fn get_frequency_domain_graph(frame_slice: &Vec<f32>, scale: f32) -> Vec<Point2> {
-    let sample_size = 1024 * 2;
-
-    let input: Vec<_> = frame_slice
-        .iter()
-        .map(|frame| std::convert::From::from(*frame as f64))
-        .collect();
-
-    let output = kopek::fft::fft(&input);
-    let mut x = -512.0;
-    let frequency_graph_points: Vec<Point2> = output
-        .iter()
-        .map(|c| {
-            let p = Point2 {
-                x,
-                y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(scale)).sqrt(),
-            };
-            x = x + 2048.0 / sample_size as f32 * X_SCALE;
-            p
-        })
-        .collect();
-
-    frequency_graph_points
 }
