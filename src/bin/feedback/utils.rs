@@ -18,6 +18,23 @@ pub fn get_scale(x_scale: f32) -> Vec<Point2> {
     scale_points
 }
 
+pub fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
+    let mut x = -513;
+    let waveform_points = frame_slice
+        .iter()
+        .step_by(2)
+        .map(|frame| {
+            x = x + 1;
+            Point2 {
+                x: x as f32,
+                y: 100.0 + frame * 1000.0,
+            }
+        })
+        .collect();
+
+    waveform_points
+}
+
 pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, scale: f32) -> Vec<Point2> {
     let sample_size = 1024 * 2;
 

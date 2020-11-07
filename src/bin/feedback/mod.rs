@@ -3,7 +3,7 @@ use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
-mod consts;
+pub mod consts;
 mod utils;
 
 pub fn start() {
@@ -15,7 +15,7 @@ struct InputModel {
 }
 
 struct Model {
-    input_stream: audio::Stream<InputModel>,
+    _input_stream: audio::Stream<InputModel>,
     consumer: Consumer<f32>,
     time_line_points: Vec<Point2>,
     frequency_line_points: Vec<Point2>,
@@ -37,14 +37,14 @@ fn model(app: &App) -> Model {
     let (producer, consumer) = ring_buffer.split();
 
     let input_model = InputModel { producer };
-    let input_stream = audio_host
+    let _input_stream = audio_host
         .new_input_stream(input_model)
         .capture(capture)
         .build()
         .unwrap();
 
     Model {
-        input_stream,
+        _input_stream,
         consumer,
         time_line_points: vec![],
         frequency_line_points: vec![],
@@ -65,6 +65,7 @@ fn capture(model: &mut InputModel, buffer: &Buffer) {
 }
 
 fn update(_app: &App, model: &mut Model, _udpate: Update) {
+    // Collect frames from the input stream
     let mut frames: Vec<f32> = vec![];
     for _ in 0..model.consumer.len() {
         let recorded_sample = match model.consumer.pop() {
@@ -80,7 +81,7 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
         .collect();
     let fft_output = kopek::fft::fft(&fft_input);
 
-    model.time_line_points = get_waveform_graph(&frames);
+    model.time_line_points = utils::get_waveform_graph(&frames);
     model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 4.0);
     model.scale_points = utils::get_scale(consts::X_SCALE);
 
@@ -132,8 +133,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
     draw.background().color(WHITE);
 }
 
-fn get_spectrum_analysis() {}
-
 fn get_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point2> {
     // implement another view to have non-linear bin sizes
     // e.g. 32-64-125-250-500-1k-2k-4k-8k-16k Hz
@@ -164,21 +163,4 @@ fn get_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point2> {
     }
 
     bin_averages
-}
-
-fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
-    let mut x = -513;
-    let waveform_points = frame_slice
-        .iter()
-        .step_by(2)
-        .map(|frame| {
-            x = x + 1;
-            Point2 {
-                x: x as f32,
-                y: 100.0 + frame * 1000.0,
-            }
-        })
-        .collect();
-
-    waveform_points
 }

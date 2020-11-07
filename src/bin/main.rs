@@ -4,6 +4,7 @@ use nannou::prelude::*;
 use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 mod feedback;
+use feedback::consts;
 
 fn main() {
     feedback::start();
@@ -101,9 +102,6 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
 }
 
-const BIN_SIZE: f32 = 22050.0 / 1024.0;
-const X_SCALE: f32 = 4.0;
-
 fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
@@ -130,7 +128,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
     for (i, point) in model.scale_points.iter().enumerate() {
         draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
-        let bin_text = i as f32 * BIN_SIZE * X_SCALE * 8.0;
+        let bin_text = i as f32 * consts::BIN_SIZE * consts::X_SCALE * 8.0;
         draw.text(&format!("{:0.0}hz", bin_text))
             .font_size(6)
             .x_y(point.x, -80.0)
@@ -210,7 +208,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
                 x,
                 y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
             };
-            x = x + 1024.0 / sample_size as f32 * X_SCALE;
+            x = x + 1024.0 / sample_size as f32 * consts::X_SCALE;
             p
         })
         .collect();
@@ -222,7 +220,7 @@ fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>, Vec<Point2
     let scale_points: Vec<Point2> = (0..128)
         .into_iter()
         .map(|i| Point2 {
-            x: -512.0 + 8.0 * i as f32 * X_SCALE,
+            x: -512.0 + 8.0 * i as f32 * consts::X_SCALE,
             y: -100.0,
         })
         .collect();
