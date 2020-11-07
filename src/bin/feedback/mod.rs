@@ -4,7 +4,8 @@ use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
 pub mod consts;
-mod utils;
+pub mod play_ogg;
+pub mod utils;
 
 pub fn start() {
     nannou::app(model).update(update).run();
@@ -26,7 +27,7 @@ fn model(app: &App) -> Model {
     let _window = app
         .new_window()
         .size(consts::SCREEN_WIDTH, consts::SCREEN_HEIGHT)
-        .title("kopek")
+        .title("kopek_feedback")
         .view(view)
         .build()
         .unwrap();
