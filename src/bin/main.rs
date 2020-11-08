@@ -1,6 +1,6 @@
 extern crate kopek;
 mod tests;
-use tests::play_ogg;
+use tests::*;
 
 fn main() {
     // feedback::start();
