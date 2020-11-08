@@ -1,11 +1,10 @@
 extern crate kopek;
+use super::consts;
+use super::utils;
 use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
 use ringbuf::{Consumer, Producer, RingBuffer};
-pub mod consts;
-pub mod play_ogg;
-pub mod utils;
 
 pub fn start() {
     nannou::app(model).update(update).run();
