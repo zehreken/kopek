@@ -3,7 +3,8 @@ where
     P: AsRef<std::path::Path>,
 {
     let file_path = path.as_ref().display().to_string();
-    let mut file = audrey::open(path).expect("Error while opening file");
+    let mut file =
+        audrey::open(path).expect(format!("Error while opening file: {}", file_path).as_ref());
     println!("{} -> {:?}", file_path, file.description());
     let channel_count = file.description().channel_count();
     let frames: Vec<[i16; 2]>;
