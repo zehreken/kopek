@@ -94,8 +94,11 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
     let fft_output = kopek::fft::fft(&fft_input);
 
     if frames.len() > 0 {
-        let (time_line, frequency_line) = analyze(frames);
-        model.time_line_points = time_line;
+        let frame_slice = frames
+            .iter()
+            .map(|frame| 100.0 + frame[0] as f32 / 500.0)
+            .collect();
+        model.time_line_points = utils::get_waveform_graph(&frame_slice);
         model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 1.0);
         model.scale_points = utils::get_scale(consts::X_SCALE);
     }
@@ -152,42 +155,6 @@ fn exit(_app: &App, model: Model) {
             report.flamegraph(file).unwrap();
         }
     }
-}
-
-fn analyze(frames_slice: Vec<[i16; 2]>) -> (Vec<Point2>, Vec<Point2>) {
-    let sample_size = 1024;
-    let mut x = -513;
-    let time_line_points: Vec<Point2> = frames_slice
-        .iter()
-        .map(|frame| {
-            x = x + 1;
-            Point2 {
-                x: x as f32,
-                y: 100.0 + (frame[0] as f32 / 500.0),
-            }
-        })
-        .collect();
-
-    let input: Vec<_> = frames_slice
-        .iter()
-        .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
-        .collect();
-
-    let output = kopek::fft::fft(&input);
-    let mut x = -512.0;
-    let frequency_line_points: Vec<Point2> = output
-        .iter()
-        .map(|c| {
-            let p = Point2 {
-                x,
-                y: -200.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt(),
-            };
-            x = x + 1024.0 / sample_size as f32 * consts::X_SCALE;
-            p
-        })
-        .collect();
-
-    (time_line_points, frequency_line_points)
 }
 
 fn play_ogg<P>(path: P, sender: Sender<Vec<[i16; 2]>>)
