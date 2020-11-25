@@ -9,14 +9,14 @@ use std::sync::mpsc::{Receiver, Sender};
 const PATHS: [&str; 1] = [
     // "sine_100.ogg",
     // "sine_200.ogg",
-    // "sine_440.ogg",
+    "sine_440.ogg",
     // "sine_500.ogg",
     // "sine_1000.ogg",
     // "sine_10000.ogg",
     // "sine_440hz_stereo.ogg",
     // "stress_free.wav",
     // "overture.wav",
-    "100_200_400_1000_10000.wav",
+    // "100_200_400_1000_10000.wav",
 ];
 
 pub fn start() {
@@ -69,22 +69,11 @@ fn model(app: &App) -> Model {
 }
 
 fn update(_app: &App, model: &mut Model, _update: Update) {
-    let mut frames_count = 0;
     let mut frames = vec![[0; 2]; 1024];
+    // Get the most recent frame
     for _frames in model.receiver.try_iter() {
-        // for i in 0..1024 {
-        //     frames[i][0] += _frames[i][0];
-        //     frames[i][1] += _frames[i][1];
-        // }
-        // frames_count += 1;
         frames = _frames;
     }
-
-    // frames_count = (frames_count as f32 / 10.0).ceil() as i16;
-    // for f in &mut frames {
-    //     f[0] = f[0] / frames_count;
-    //     f[1] = f[1] / frames_count;
-    // }
 
     let fft_input: Vec<_> = frames
         .iter()

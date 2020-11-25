@@ -18,6 +18,7 @@ pub fn get_scale(x_scale: f32) -> Vec<Point2> {
     scale_points
 }
 
+// This is the Time Domain graph
 pub fn get_waveform_graph(frame_slice: &Vec<f32>) -> Vec<Point2> {
     let mut x = -513;
     let waveform_points = frame_slice
