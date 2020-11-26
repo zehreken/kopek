@@ -33,7 +33,7 @@ fn model(app: &App) -> Model {
 
     let audio_host = audio::Host::new();
 
-    let ring_buffer = RingBuffer::<f32>::new(1024 * 2); // Add some latency
+    let ring_buffer = RingBuffer::<f32>::new(1024); // Add some latency
     let (producer, consumer) = ring_buffer.split();
 
     let input_model = InputModel { producer };
