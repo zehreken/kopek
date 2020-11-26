@@ -54,12 +54,16 @@ fn model(app: &App) -> Model {
 
 fn capture(model: &mut InputModel, buffer: &Buffer) {
     for frame in buffer.frames() {
+        let mut average = 0.0;
         for sample in frame {
-            let r = model.producer.push(*sample);
-            match r {
-                Ok(_) => (),
-                Err(_) => (),
-            }
+            average += sample;
+        }
+        average = average / frame.len() as f32;
+
+        let r = model.producer.push(average);
+        match r {
+            Ok(_) => (),
+            Err(_) => (),
         }
     }
 }
@@ -81,7 +85,7 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
         .collect();
     let fft_output = kopek::fft::fft(&fft_input);
 
-    model.time_line_points = utils::get_waveform_graph(&frames);
+    model.time_line_points = utils::get_waveform_graph(&frames, 1000.0);
     model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 4.0);
     model.scale_points = utils::get_scale(consts::X_SCALE);
 
@@ -99,13 +103,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .weight(1.0)
         .points(model.time_line_points.clone())
         .color(CRIMSON);
-
-    // if model.frequency_line_points.len() == 2048 {
-    //     draw.polyline()
-    //         .weight(1.0)
-    //         .points(model.frequency_line_points.clone())
-    //         .color(GREEN);
-    // }
 
     if model.frequency_line_points.len() == 2048 {
         let average_bins = utils::get_spectrum(&model.frequency_line_points);

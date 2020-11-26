@@ -87,7 +87,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             .iter()
             .map(|frame| 100.0 + frame[0] as f32 / 500.0)
             .collect();
-        model.time_line_points = utils::get_waveform_graph(&frame_slice);
+        model.time_line_points = utils::get_waveform_graph(&frame_slice, 1.0);
         model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 1.0);
         model.scale_points = utils::get_scale(consts::X_SCALE);
     }
@@ -104,11 +104,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .weight(1.0)
         .points(model.time_line_points.clone())
         .color(CRIMSON);
-
-    // draw.polyline()
-    //     .weight(1.0)
-    //     .points(model.frequency_line_points.clone())
-    //     .color(GREEN);
 
     if model.frequency_line_points.len() == 1024 {
         let average_bins = utils::get_spectrum(&model.frequency_line_points);
