@@ -104,15 +104,19 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .points(model.time_line_points.clone())
         .color(CRIMSON);
 
-    if model.frequency_line_points.len() == 2048 {
-        let average_bins = utils::get_spectrum(&model.frequency_line_points);
-        // draw.polyline().weight(1.0).points(average_bins).color(RED);
-        for bin in average_bins {
-            draw.rect()
-                .x_y(bin.x, -100.0)
-                .w_h(90.0, 200.0 - bin.y.abs())
-                .color(GREEN);
-        }
+    if model.frequency_line_points.len() == 1024 {
+        draw.polyline()
+            .weight(1.0)
+            .points(model.frequency_line_points.clone())
+            .color(GREEN);
+        // let average_bins = utils::get_spectrum(&model.frequency_line_points);
+        // // draw.polyline().weight(1.0).points(average_bins).color(RED);
+        // for bin in average_bins {
+        //     draw.rect()
+        //         .x_y(bin.x, -100.0)
+        //         .w_h(90.0, 200.0 - bin.y.abs())
+        //         .color(GREEN);
+        // }
     }
 
     // Draw the scales, binsize calculation is probably wrong

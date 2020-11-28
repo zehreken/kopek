@@ -106,6 +106,10 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .color(CRIMSON);
 
     if model.frequency_line_points.len() == 1024 {
+        // draw.polyline()
+        //     .weight(1.0)
+        //     .points(model.frequency_line_points.clone())
+        //     .color(GREEN);
         let average_bins = utils::get_spectrum(&model.frequency_line_points);
         // draw.polyline().weight(1.0).points(average_bins).color(RED);
         for bin in average_bins {
