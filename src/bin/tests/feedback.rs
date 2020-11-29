@@ -105,29 +105,34 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .color(CRIMSON);
 
     if model.frequency_line_points.len() == 1024 {
+        // Frequency domain wide range
         draw.polyline()
             .weight(1.0)
             .points(model.frequency_line_points.clone())
             .color(GREEN);
-        // let average_bins = utils::get_spectrum(&model.frequency_line_points);
-        // // draw.polyline().weight(1.0).points(average_bins).color(RED);
-        // for bin in average_bins {
-        //     draw.rect()
-        //         .x_y(bin.x, -100.0)
-        //         .w_h(90.0, 200.0 - bin.y.abs())
-        //         .color(GREEN);
-        // }
+
+        for (i, point) in model.scale_points.iter().enumerate() {
+            draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
+            let bin_text = i as f32 * consts::BIN_SIZE * consts::X_SCALE * 8.0;
+            draw.text(&format!("{:0.0}hz", bin_text))
+                .font_size(6)
+                .x_y(point.x, -80.0)
+                .color(BLACK);
+        }
+        // ===========================
+
+        // Frequency domain narrow ranges
+        let average_bins = utils::get_narrow_bar_spectrum(&model.frequency_line_points);
+        for bin in average_bins {
+            draw.rect()
+                .x_y(bin.x, -100.0)
+                .w_h(90.0, 200.0 - bin.y.abs())
+                .color(GREEN);
+        }
+        // ==============================
     }
 
     // Draw the scales, binsize calculation is probably wrong
-    for (i, point) in model.scale_points.iter().enumerate() {
-        draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
-        let bin_text = i as f32 * consts::BIN_SIZE * consts::X_SCALE * 8.0;
-        draw.text(&format!("{:0.0}hz", bin_text))
-            .font_size(6)
-            .x_y(point.x, -80.0)
-            .color(BLACK);
-    }
 
     draw.to_frame(app, &frame).unwrap();
 

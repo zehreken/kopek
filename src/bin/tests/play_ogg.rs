@@ -110,7 +110,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         //     .weight(1.0)
         //     .points(model.frequency_line_points.clone())
         //     .color(GREEN);
-        let average_bins = utils::get_spectrum(&model.frequency_line_points);
+        let average_bins = utils::get_narrow_bar_spectrum(&model.frequency_line_points);
         // draw.polyline().weight(1.0).points(average_bins).color(RED);
         for bin in average_bins {
             // TODO: Fix and remove NaN check
