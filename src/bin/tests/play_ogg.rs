@@ -9,14 +9,14 @@ use std::sync::mpsc::{Receiver, Sender};
 const PATHS: [&str; 1] = [
     // "sine_100.ogg",
     // "sine_200.ogg",
-    "sine_440.ogg",
+    // "sine_440.ogg",
     // "sine_500.ogg",
     // "sine_1000.ogg",
     // "sine_10000.ogg",
     // "sine_440hz_stereo.ogg",
     // "stress_free.wav",
     // "overture.wav",
-    // "100_200_400_1000_10000.wav",
+    "100_200_400_1000_10000.wav",
 ];
 
 pub fn start() {
@@ -88,11 +88,11 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             .map(|frame| 100.0 + frame[0] as f32 / 500.0)
             .collect();
         model.time_line_points = utils::get_waveform_graph(&frame_slice, 1.0);
-        model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 1.0);
+        model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 2.0);
         model.scale_points = utils::get_scale(consts::X_SCALE);
     }
 
-    std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
+    // std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -106,21 +106,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .color(CRIMSON);
 
     if model.frequency_line_points.len() == 1024 {
-        // draw.polyline()
-        //     .weight(1.0)
-        //     .points(model.frequency_line_points.clone())
-        //     .color(GREEN);
-        let average_bins = utils::get_narrow_bar_spectrum(&model.frequency_line_points);
-        // draw.polyline().weight(1.0).points(average_bins).color(RED);
-        for bin in average_bins {
-            // TODO: Fix and remove NaN check
-            if !bin.y.is_nan() {
-                draw.rect()
-                    .x_y(bin.x, -100.0)
-                    .w_h(90.0, 200.0 - bin.y.abs())
-                    .color(GREEN);
-            }
-        }
+        // Frequency domain wide range
+        draw.polyline()
+            .weight(1.0)
+            .points(model.frequency_line_points.clone())
+            .color(GREEN);
 
         for (i, point) in model.scale_points.iter().enumerate() {
             draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
@@ -130,6 +120,28 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .x_y(point.x, -80.0)
                 .color(BLACK);
         }
+        // ===========================
+
+        /* Frequency domain narrow ranges
+        let average_bins = utils::get_narrow_bar_spectrum(&model.frequency_line_points);
+        for bin in average_bins {
+            // TODO: Fix and remove NaN check
+            if !bin.y.is_nan() {
+                draw.rect()
+                    .x_y(bin.x, 0.0)
+                    .w_h(90.0, 200.0 - bin.y.abs())
+                    .color(GREEN);
+            }
+        }
+
+        let spectrum_scale = utils::get_narrow_bar_spectrum_scale(&model.frequency_line_points);
+        for i in 0..spectrum_scale.len() {
+            draw.text(&format!("{:0.0}", spectrum_scale[i]))
+                .font_size(20)
+                .x_y(-462.0 + 100.0 * i as f32, 0.0)
+                .color(BLACK);
+        }
+        */// ==============================
     }
 
     draw.to_frame(app, &frame).unwrap();

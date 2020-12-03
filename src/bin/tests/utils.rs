@@ -35,7 +35,9 @@ pub fn get_waveform_graph(frame_slice: &Vec<f32>, scale: f32) -> Vec<Point2> {
     waveform_points
 }
 
-pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, scale: f32) -> Vec<Point2> {
+// Complex FFT gives z = x + jy, where x is the real part and y is the imaginary part
+// Magnitude, |z| = sqrt(x^2 + y^2)
+pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, x_scale: f32) -> Vec<Point2> {
     let sample_size = 1024 * 2;
 
     // let output = kopek::fft::fft(&fft_output);
@@ -43,11 +45,12 @@ pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, scale: f32) ->
     let frequency_graph_points: Vec<Point2> = fft_output
         .iter()
         .map(|c| {
+            let magnitude = ((c.re as f32).powf(2.0) + (c.im as f32).powf(2.0)).sqrt();
             let p = Point2 {
                 x,
-                y: -100.0 + ((c.re as f32).powf(2.0) + (c.im as f32).powf(scale)).sqrt(),
+                y: -100.0 + magnitude,
             };
-            x = x + 2048.0 / sample_size as f32 * consts::X_SCALE;
+            x = x + 2048.0 / sample_size as f32 * x_scale;
             p
         })
         .collect();
