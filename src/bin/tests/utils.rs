@@ -1,4 +1,3 @@
-use super::consts;
 use nannou::prelude::*;
 use num::complex::Complex;
 
@@ -67,6 +66,8 @@ pub fn get_narrow_bar_spectrum_scale() -> Vec<i32> {
         })
         .collect();
 
+    let bin_sizes: Vec<i32> = vec![4, 4, 8, 16, 32, 64, 128, 256];
+
     bin_sizes
 }
 
@@ -83,23 +84,27 @@ pub fn get_narrow_bar_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point
         })
         .collect();
     // println!("bin_sizes: {:?}", bin_sizes);
+
+    let bin_sizes: Vec<i32> = vec![4, 4, 8, 16, 32, 64, 128, 256];
     // After this bin sizes are 4, 4, 8, 16, 32, 64, 128, 256. In total 512 data points, half of frequency_line_points
+    // The other half is kind of a reflection
     let mut average_bins: Vec<Point2> = vec![];
     let mut start_index = 0;
-    for (i, end_index) in bin_sizes.into_iter().enumerate() {
+    for (i, bin_size) in bin_sizes.into_iter().enumerate() {
+        let end_index = start_index + bin_size;
         let sum: f32 = frequency_line_points[start_index as usize..end_index as usize]
             .iter()
             .map(|v| v.y)
             .sum();
-        let average = sum / (end_index - start_index) as f32;
+        let average = sum / bin_size as f32;
 
-        // println!("{}, {}, {}", sum, end_index, start_index);
+        // println!("{}, {}, {}", start_index, end_index, sum);
         // println!("{} {} average: {}", start_index, end_index, average);
         average_bins.push(Point2 {
             x: -462.0 + 100.0 * i as f32,
             y: average,
         });
-        start_index = end_index;
+        start_index += bin_size;
     }
 
     average_bins

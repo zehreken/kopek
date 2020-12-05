@@ -14,9 +14,9 @@ const PATHS: [&str; 1] = [
     // "sine_1000.ogg",
     // "sine_10000.ogg",
     // "sine_440hz_stereo.ogg",
-    "stress_free.wav",
+    // "stress_free.wav",
     // "overture.wav",
-    // "100_200_400_1000_10000.wav",
+    "100_200_400_1000_10000.wav",
 ];
 
 pub fn start() {
