@@ -14,9 +14,9 @@ const PATHS: [&str; 1] = [
     // "sine_1000.ogg",
     // "sine_10000.ogg",
     // "sine_440hz_stereo.ogg",
-    // "stress_free.wav",
+    "stress_free.wav",
     // "overture.wav",
-    "100_200_400_1000_10000.wav",
+    // "100_200_400_1000_10000.wav",
 ];
 
 pub fn start() {
@@ -92,7 +92,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
         model.scale_points = utils::get_scale(consts::X_SCALE);
     }
 
-    // std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
+    std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
@@ -122,7 +122,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
         }
         // ===========================
 
-        /* Frequency domain narrow ranges
+        // Frequency domain narrow ranges
         let average_bins = utils::get_narrow_bar_spectrum(&model.frequency_line_points);
         for bin in average_bins {
             // TODO: Fix and remove NaN check
@@ -141,7 +141,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
                 .x_y(-462.0 + 100.0 * i as f32, 0.0)
                 .color(BLACK);
         }
-        */// ==============================
+        // ==============================
     }
 
     draw.to_frame(app, &frame).unwrap();

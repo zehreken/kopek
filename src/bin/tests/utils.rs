@@ -58,7 +58,7 @@ pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, x_scale: f32) 
     frequency_graph_points
 }
 
-pub fn get_narrow_bar_spectrum_scale(frequency_line_points: &Vec<Point2>) -> Vec<i32> {
+pub fn get_narrow_bar_spectrum_scale() -> Vec<i32> {
     let mut sum = 1;
     let bin_sizes: Vec<i32> = (0..9)
         .map(|i| {
