@@ -89,7 +89,7 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
             .collect();
         model.time_line_points = utils::get_waveform_graph(&frame_slice, 1.0);
         model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 2.0);
-        model.scale_points = utils::get_scale(consts::X_SCALE);
+        model.scale_points = utils::get_scale(128);
     }
 
     std::thread::sleep(std::time::Duration::from_millis(33)); // Roughly set to 30 FPS

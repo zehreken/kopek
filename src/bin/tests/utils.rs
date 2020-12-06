@@ -5,15 +5,27 @@ use num::complex::Complex;
 // Frequency bin size is for each element in the output vector
 // For example if the bin size is 22050 / 1024 = 21.53 and
 // If the screen width is 1024, then each pixel will represent 21.53Hz
-pub fn get_scale(x_scale: f32) -> Vec<Point2> {
-    let scale_points: Vec<Point2> = (0..128)
+// pub fn get_scale(x_scale: f32) -> Vec<Point2> {
+//     let scale_points: Vec<Point2> = (0..128)
+//         .into_iter()
+//         .map(|i| Point2 {
+//             x: -512.0 + 8.0 * i as f32 * x_scale,
+//             y: -100.0,
+//         })
+//         .collect();
+
+//     scale_points
+// }
+
+pub fn get_scale(num_of_points: u16) -> Vec<Point2> {
+    let dist = 1024 / num_of_points;
+    let scale_points: Vec<Point2> = (0..num_of_points)
         .into_iter()
         .map(|i| Point2 {
-            x: -512.0 + 8.0 * i as f32 * x_scale,
+            x: -512.0 + (dist * i) as f32,
             y: -100.0,
         })
         .collect();
-
     scale_points
 }
 
@@ -76,18 +88,13 @@ pub fn get_narrow_bar_spectrum(frequency_line_points: &Vec<Point2>) -> Vec<Point
     // implement another view to have non-linear bin sizes
     // e.g. 32-64-125-250-500-1k-2k-4k-8k-16k Hz
     // get half of model.frequency_line_points
-    let mut sum = 1;
-    let bin_sizes: Vec<i32> = (0..9)
-        .map(|i| {
-            sum += 2_i32.pow(i);
-            sum
-        })
-        .collect();
+
     // println!("bin_sizes: {:?}", bin_sizes);
 
     let bin_sizes: Vec<i32> = vec![4, 4, 8, 16, 32, 64, 128, 256];
     // After this bin sizes are 4, 4, 8, 16, 32, 64, 128, 256. In total 512 data points, half of frequency_line_points
     // The other half is kind of a reflection
+    // If sample rate is 44100, each data point will represent 44100 / 1024 = 43.07Hz
     let mut average_bins: Vec<Point2> = vec![];
     let mut start_index = 0;
     for (i, bin_size) in bin_sizes.into_iter().enumerate() {

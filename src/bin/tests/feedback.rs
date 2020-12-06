@@ -87,7 +87,7 @@ fn update(_app: &App, model: &mut Model, _udpate: Update) {
 
     model.time_line_points = utils::get_waveform_graph(&frames, 1000.0);
     model.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 1.0);
-    model.scale_points = utils::get_scale(consts::X_SCALE);
+    model.scale_points = utils::get_scale(32);
 
     // println!("frames count: {}", frames.len());
 
@@ -115,7 +115,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         for (i, point) in model.scale_points.iter().enumerate() {
             draw.rect().w_h(1.0, 10.0).xy(*point).color(BLACK);
-            let bin_text = i as f32 * consts::BIN_SIZE * consts::X_SCALE * 16.0;
+            let bin_text = i as f32 * consts::BIN_SIZE * (1024 / 32) as f32;
             draw.text(&format!("{:0.0}hz", bin_text))
                 .font_size(6)
                 .x_y(point.x, -80.0)

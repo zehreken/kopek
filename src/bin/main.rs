@@ -3,6 +3,6 @@ mod tests;
 use tests::*;
 
 fn main() {
-    // feedback::start();
-    play_ogg::start();
+    feedback::start();
+    // play_ogg::start();
 }
