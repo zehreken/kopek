@@ -136,10 +136,13 @@ fn view(app: &App, model: &Model, frame: Frame) {
 
         let spectrum_scale = utils::get_narrow_bar_spectrum_scale();
         for i in 0..spectrum_scale.len() {
-            draw.text(&format!("{:0.0}", spectrum_scale[i]))
-                .font_size(20)
-                .x_y(-462.0 + 100.0 * i as f32, 0.0)
-                .color(BLACK);
+            draw.text(&format!(
+                "{:0.0}Hz-{:0.0}Hz",
+                spectrum_scale[i].x, spectrum_scale[i].y
+            ))
+            .font_size(20)
+            .x_y(-462.0 + 100.0 * i as f32, 0.0)
+            .color(BLACK);
         }
         // ==============================
     }

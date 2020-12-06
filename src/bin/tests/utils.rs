@@ -1,3 +1,4 @@
+use super::consts;
 use nannou::prelude::*;
 use num::complex::Complex;
 
@@ -5,20 +6,9 @@ use num::complex::Complex;
 // Frequency bin size is for each element in the output vector
 // For example if the bin size is 22050 / 1024 = 21.53 and
 // If the screen width is 1024, then each pixel will represent 21.53Hz
-// pub fn get_scale(x_scale: f32) -> Vec<Point2> {
-//     let scale_points: Vec<Point2> = (0..128)
-//         .into_iter()
-//         .map(|i| Point2 {
-//             x: -512.0 + 8.0 * i as f32 * x_scale,
-//             y: -100.0,
-//         })
-//         .collect();
-
-//     scale_points
-// }
-
 pub fn get_scale(num_of_points: u16) -> Vec<Point2> {
-    let dist = 1024 / num_of_points;
+    let screen_width = 1024;
+    let dist = screen_width / num_of_points;
     let scale_points: Vec<Point2> = (0..num_of_points)
         .into_iter()
         .map(|i| Point2 {
@@ -69,18 +59,23 @@ pub fn get_frequency_domain_graph(fft_output: &Vec<Complex<f64>>, x_scale: f32) 
     frequency_graph_points
 }
 
-pub fn get_narrow_bar_spectrum_scale() -> Vec<i32> {
-    let mut sum = 1;
-    let bin_sizes: Vec<i32> = (0..9)
-        .map(|i| {
-            sum += 2_i32.pow(i);
-            sum
+pub fn get_narrow_bar_spectrum_scale() -> Vec<Point2> {
+    let bin_sizes: Vec<i32> = vec![4, 4, 8, 16, 32, 64, 128, 256];
+    let mut accumulator = 0.0;
+    let bin_ranges: Vec<Point2> = bin_sizes
+        .iter()
+        .map(|bin_size| {
+            let start_freq = accumulator;
+            let end_freq = start_freq + consts::BIN_SIZE * *bin_size as f32;
+            accumulator = end_freq;
+            Point2 {
+                x: start_freq,
+                y: end_freq,
+            }
         })
         .collect();
 
-    let bin_sizes: Vec<i32> = vec![4, 4, 8, 16, 32, 64, 128, 256];
-
-    bin_sizes
+    bin_ranges
 }
 
 // Returns bar spectrum like the old cd players
