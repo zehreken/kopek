@@ -3,7 +3,6 @@ mod fake_tests;
 use fake_tests::*;
 
 fn main() {
-    // feedback::start();
+    feedback::start();
     // play_ogg::start();
-    pong::start();
 }

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
 
-pub fn start() {
+fn main() {
     App::build().run();
 }
