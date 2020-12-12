@@ -20,8 +20,10 @@ fn main() {
         .run();
 }
 
-struct PlayerOne {}
-struct PlayerTwo {}
+enum Player {
+    You,
+    Ai,
+}
 
 struct Paddle {
     speed: f32,
@@ -58,7 +60,7 @@ fn setup(
             sprite: Sprite::new(Vec2::new(30.0, 120.0)),
             ..Default::default()
         })
-        .with(PlayerOne {})
+        .with(Player::You)
         .with(Paddle { speed: 500.0 })
         .with(Collider::Paddle)
         // paddle two
@@ -68,7 +70,7 @@ fn setup(
             sprite: Sprite::new(Vec2::new(30.0, 120.0)),
             ..Default::default()
         })
-        .with(PlayerTwo {})
+        .with(Player::Ai)
         .with(Paddle { speed: 500.0 })
         .with(Collider::Paddle)
         // ball
@@ -148,23 +150,38 @@ fn setup(
 fn paddle_movement_system(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&Paddle, &mut Transform)>,
+    mut query: Query<(&Paddle, &Player, &mut Transform)>,
 ) {
-    for (paddle, mut transform) in query.iter_mut() {
-        let mut direction = 0.0;
-        if keyboard_input.pressed(KeyCode::A) {
-            direction += 1.0;
-        }
+    for (paddle, player, mut transform) in query.iter_mut() {
+        if let Player::You = *player {
+            let mut direction = 0.0;
+            if keyboard_input.pressed(KeyCode::A) {
+                direction += 1.0;
+            }
 
-        if keyboard_input.pressed(KeyCode::Z) {
-            direction -= 1.0;
-        }
+            if keyboard_input.pressed(KeyCode::Z) {
+                direction -= 1.0;
+            }
 
-        let translation = &mut transform.translation;
-        // move the paddle horizontally
-        *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
-        // bound the paddle within the walls
-        *translation.y_mut() = translation.y().min(220.0).max(-220.0);
+            let translation = &mut transform.translation;
+            // move the paddle horizontally
+            *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
+            // bound the paddle within the walls
+            *translation.y_mut() = translation.y().min(220.0).max(-220.0);
+        } else if let Player::Ai = *player {
+            let mut direction = 0.0;
+            if keyboard_input.pressed(KeyCode::J) {
+                direction += 1.0;
+            }
+
+            if keyboard_input.pressed(KeyCode::N) {
+                direction -= 1.0;
+            }
+
+            let translation = &mut transform.translation;
+            *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
+            *translation.y_mut() = translation.y().min(220.0).max(-220.0);
+        }
     }
 }
 
@@ -208,7 +225,7 @@ fn ball_collision_system(
                 // scorable colliders should be despawned and increment the scoreboard on collision
                 if let Collider::Scorable = *collider {
                     scoreboard.player_one += 1;
-                    commands.despawn(collider_entity);
+                    // commands.despawn(collider_entity);
                 }
 
                 // reflect the ball when it collides
@@ -233,7 +250,7 @@ fn ball_collision_system(
                     *velocity.y_mut() = -velocity.y();
                 }
 
-                // break if this collider is on a solid, otherwise continue check whether a solid is also in collision
+                // break if this collidera is on a solid, otherwise continue check whether a solid is also in collision
                 if let Collider::Solid = *collider {
                     break;
                 }
