@@ -1,6 +1,9 @@
 extern crate kopek;
-mod fake_tests;
-use fake_tests::*;
+
+mod consts;
+mod feedback;
+mod play_ogg;
+mod utils;
 
 fn main() {
     feedback::start();

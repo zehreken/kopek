@@ -153,7 +153,7 @@ fn view(app: &App, model: &Model, frame: Frame) {
 fn exit(_app: &App, model: Model) {
     if cfg!(debug_assertions) {
         if let Ok(report) = model.guard.report().build() {
-            println!("report: {}", &report);
+            println!("report: {:?}", &report);
             let file = std::fs::File::create("nannou.svg").unwrap();
             report.flamegraph(file).unwrap();
         }

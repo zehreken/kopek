@@ -4,6 +4,8 @@ use bevy::{
     sprite::collide_aabb::{collide, Collision},
 };
 
+mod audio;
+
 fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
