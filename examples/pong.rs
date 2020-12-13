@@ -8,8 +8,8 @@ fn main() {
     App::build()
         .add_plugins(DefaultPlugins)
         .add_resource(Scoreboard {
-            player_one: 0,
-            player_two: 0,
+            player_you: 0,
+            player_ai: 0,
         })
         .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_startup_system(setup.system())
@@ -34,13 +34,14 @@ struct Ball {
 }
 
 struct Scoreboard {
-    player_one: u8,
-    player_two: u8,
+    player_you: u8,
+    player_ai: u8,
 }
 
 enum Collider {
     Solid,
-    Scorable,
+    ScorableYou,
+    ScorableAi,
     Paddle,
 }
 
@@ -119,7 +120,8 @@ fn setup(
             ..Default::default()
         })
         .with(Collider::Solid)
-        .with(Collider::Scorable)
+        .with(Collider::ScorableYou)
+        .with(Player::You)
         // right
         .spawn(SpriteComponents {
             material: wall_material.clone(),
@@ -128,7 +130,8 @@ fn setup(
             ..Default::default()
         })
         .with(Collider::Solid)
-        .with(Collider::Scorable)
+        .with(Collider::ScorableAi)
+        .with(Player::Ai)
         // bottom
         .spawn(SpriteComponents {
             material: wall_material.clone(),
@@ -197,8 +200,8 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
 fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
     for mut text in query.iter_mut() {
         text.value = format!(
-            "YOU:{}               {}:AI",
-            scoreboard.player_one, scoreboard.player_two
+            "YOU:{}                       {}:AI",
+            scoreboard.player_you, scoreboard.player_ai
         );
     }
 }
@@ -223,9 +226,10 @@ fn ball_collision_system(
             );
             if let Some(collision) = collision {
                 // scorable colliders should be despawned and increment the scoreboard on collision
-                if let Collider::Scorable = *collider {
-                    scoreboard.player_one += 1;
-                    // commands.despawn(collider_entity);
+                if let Collider::ScorableYou = *collider {
+                    scoreboard.player_ai += 1;
+                } else if let Collider::ScorableAi = *collider {
+                    scoreboard.player_you += 1;
                 }
 
                 // reflect the ball when it collides
