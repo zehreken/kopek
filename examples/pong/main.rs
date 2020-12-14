@@ -7,14 +7,18 @@ use bevy::{
 mod audio;
 
 fn main() {
+    audio::start();
+
     App::build()
         .add_plugins(DefaultPlugins)
+        .add_system(bevy::input::system::exit_on_esc_system.system())
         .add_resource(Scoreboard {
             player_you: 0,
             player_ai: 0,
         })
         .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .add_startup_system(setup.system())
+        .add_system(on_exit.system())
         .add_system(paddle_movement_system.system())
         .add_system(ball_collision_system.system())
         .add_system(ball_movement_system.system())
@@ -152,6 +156,18 @@ fn setup(
         .with(Collider::Solid);
 }
 
+fn on_exit(
+    ev_exit: Res<Events<bevy::app::AppExit>>,
+    mut reader: Local<EventReader<bevy::app::AppExit>>,
+) {
+    // You can send exit event from anywhere in the code using the line below
+    // ev_exit.send(bevy::app::AppExit);
+    for ev in reader.iter(&ev_exit) {
+        println!("{:?}", ev);
+        // Clean up audio thread
+    }
+}
+
 fn paddle_movement_system(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
@@ -167,6 +183,8 @@ fn paddle_movement_system(
             if keyboard_input.pressed(KeyCode::Z) {
                 direction -= 1.0;
             }
+
+            if keyboard_input.pressed(KeyCode::Escape) {}
 
             let translation = &mut transform.translation;
             // move the paddle horizontally

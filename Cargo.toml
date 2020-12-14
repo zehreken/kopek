@@ -14,7 +14,8 @@ pprof = { version = "0.3", features = ["flamegraph"] }
 [dev-dependencies]
 criterion = "0.3"
 bevy = "0.3.0"
-cpal = "0.10.0"
+cpal = "0.13.1"
+anyhow = "1.0.35"
 audrey = "0.2.0"
 ringbuf = "0.2.2"
 nannou = "0.15.0"
