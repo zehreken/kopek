@@ -7,28 +7,36 @@ use bevy::{
 mod audio;
 
 fn main() {
-    audio::start();
-
-    App::build()
-        .add_plugins(DefaultPlugins)
-        .add_system(bevy::input::system::exit_on_esc_system.system())
-        .add_resource(Scoreboard {
-            player_you: 0,
-            player_ai: 0,
-        })
-        .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
-        .add_startup_system(setup.system())
-        .add_system(on_exit.system())
-        .add_system(paddle_movement_system.system())
-        .add_system(ball_collision_system.system())
-        .add_system(ball_movement_system.system())
-        .add_system(scoreboard_system.system())
-        .run();
+    let audio_model = audio::start();
+    if let Ok(am) = audio_model {
+        let game = Game { audio_model: am };
+        App::build()
+            .add_plugins(DefaultPlugins)
+            .add_system(bevy::input::system::exit_on_esc_system.system())
+            .add_thread_local_resource(game)
+            .add_resource(Scoreboard {
+                player_you: 0,
+                player_ai: 0,
+            })
+            .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+            .add_startup_system(setup.system())
+            .add_system(on_exit.system())
+            .add_system(local_resource_controller.thread_local_system())
+            .add_system(paddle_movement_system.system())
+            .add_system(ball_collision_system.system())
+            .add_system(ball_movement_system.system())
+            .add_system(scoreboard_system.system())
+            .run();
+    }
 }
 
 enum Player {
     You,
     Ai,
+}
+
+struct Game {
+    audio_model: audio::Model,
 }
 
 struct Paddle {
@@ -164,9 +172,13 @@ fn on_exit(
     // ev_exit.send(bevy::app::AppExit);
     for ev in reader.iter(&ev_exit) {
         println!("{:?}", ev);
+        // let audio_model = resources.get_thread_local::<Game>().unwrap().audio_model;
+        // audio::stop(audio_model);
         // Clean up audio thread
     }
 }
+
+fn local_resource_controller(_world: &mut World, _resources: &mut Resources) {}
 
 fn paddle_movement_system(
     time: Res<Time>,

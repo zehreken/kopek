@@ -10,12 +10,20 @@ extern crate anyhow;
 extern crate cpal;
 extern crate ringbuf;
 
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use cpal::{
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Stream,
+};
 use ringbuf::RingBuffer;
 
-const LATENCY_MS: f32 = 150.0;
+const LATENCY_MS: f32 = 20.0;
 
-pub fn start() -> Result<(), anyhow::Error> {
+pub struct Model {
+    input_stream: Stream,
+    output_stream: Stream,
+}
+
+pub fn start() -> Result<Model, anyhow::Error> {
     let host = cpal::default_host();
 
     // Default devices.
@@ -91,13 +99,10 @@ pub fn start() -> Result<(), anyhow::Error> {
     input_stream.play()?;
     output_stream.play()?;
 
-    // Run for 3 seconds before closing.
-    println!("Playing for 3 seconds... ");
-    std::thread::sleep(std::time::Duration::from_secs(3));
-    drop(input_stream);
-    drop(output_stream);
-    println!("Done!");
-    Ok(())
+    Ok(Model {
+        input_stream,
+        output_stream,
+    })
 }
 
 fn err_fn(err: cpal::StreamError) {
