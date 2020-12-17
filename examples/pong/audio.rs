@@ -14,13 +14,14 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Stream,
 };
-use ringbuf::RingBuffer;
+use ringbuf::{Consumer, RingBuffer};
 
-const LATENCY_MS: f32 = 20.0;
+const LATENCY_MS: f32 = 150.0;
 
 pub struct Model {
-    input_stream: Stream,
-    output_stream: Stream,
+    pub input_stream: Stream,
+    // pub output_stream: Stream,
+    pub consumer: Consumer<f32>,
 }
 
 pub fn start() -> Result<Model, anyhow::Error> {
@@ -61,26 +62,26 @@ pub fn start() -> Result<Model, anyhow::Error> {
                 output_fell_behind = true;
             }
         }
-        if output_fell_behind {
-            eprintln!("output stream fell behind: try increasing latency");
-        }
+        // if output_fell_behind {
+        //     eprintln!("output stream fell behind: try increasing latency");
+        // }
     };
 
-    let output_data_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        let mut input_fell_behind = false;
-        for sample in data {
-            *sample = match consumer.pop() {
-                Some(s) => s,
-                None => {
-                    input_fell_behind = true;
-                    0.0
-                }
-            };
-        }
-        if input_fell_behind {
-            eprintln!("input stream fell behind: try increasing latency");
-        }
-    };
+    // let output_data_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+    //     let mut input_fell_behind = false;
+    //     for sample in data {
+    //         *sample = match consumer.pop() {
+    //             Some(s) => s,
+    //             None => {
+    //                 input_fell_behind = true;
+    //                 0.0
+    //             }
+    //         };
+    //     }
+    //     if input_fell_behind {
+    //         eprintln!("input stream fell behind: try increasing latency");
+    //     }
+    // };
 
     // Build streams.
     println!(
@@ -88,7 +89,7 @@ pub fn start() -> Result<Model, anyhow::Error> {
         config
     );
     let input_stream = input_device.build_input_stream(&config, input_data_fn, err_fn)?;
-    let output_stream = output_device.build_output_stream(&config, output_data_fn, err_fn)?;
+    // let output_stream = output_device.build_output_stream(&config, output_data_fn, err_fn)?;
     println!("Successfully built streams.");
 
     // Play the streams.
@@ -97,11 +98,12 @@ pub fn start() -> Result<Model, anyhow::Error> {
         LATENCY_MS
     );
     input_stream.play()?;
-    output_stream.play()?;
+    // output_stream.play()?;
 
     Ok(Model {
         input_stream,
-        output_stream,
+        // output_stream,
+        consumer,
     })
 }
 

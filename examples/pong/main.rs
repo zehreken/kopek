@@ -3,12 +3,14 @@ use bevy::{
     render::pass::ClearColor,
     sprite::collide_aabb::{collide, Collision},
 };
+mod utils;
 
 mod audio;
 
 fn main() {
     let audio_model = audio::start();
     if let Ok(am) = audio_model {
+        // am.output_stream.pause();
         let game = Game { audio_model: am };
         App::build()
             .add_plugins(DefaultPlugins)
@@ -178,7 +180,61 @@ fn on_exit(
     }
 }
 
-fn local_resource_controller(_world: &mut World, _resources: &mut Resources) {}
+fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
+    // let consumer = &mut resources
+    //     .get_thread_local_mut::<Game>()
+    //     .unwrap()
+    //     .audio_model
+    //     .consumer;
+    // println!("{}", consumer.remaining());
+    // for _ in 0..consumer.remaining() {
+    //     let sample = match consumer.pop() {
+    //         Some(s) => s,
+    //         None => 0.0,
+    //     };
+
+    //     println!("sample: {}", sample);
+    // }
+
+    let mut samples = vec![];
+    for _ in 0..1024 {
+        let sample = match resources
+            .get_thread_local_mut::<Game>()
+            .unwrap()
+            .audio_model
+            .consumer
+            .pop()
+        {
+            Some(s) => s,
+            None => 0.0,
+        };
+
+        samples.push(sample);
+
+        // println!("sample: {}", sample);
+    }
+
+    let fft_input: Vec<_> = samples
+        .iter()
+        .map(|frame| std::convert::From::from(*frame as f64))
+        .collect();
+    let fft_output = kopek::fft::fft(&fft_input);
+    let frequency_domain = utils::get_frequency_domain_graph(&fft_output, 1.0);
+    let average_bins = utils::get_narrow_bar_spectrum(&frequency_domain);
+
+    average_bins
+        .iter()
+        .for_each(|f| println!("{}", (100.0 + f.y())));
+    // println!(
+    //     "remaining: {}",
+    //     resources
+    //         .get_thread_local_mut::<Game>()
+    //         .unwrap()
+    //         .audio_model
+    //         .consumer
+    //         .remaining()
+    // );
+}
 
 fn paddle_movement_system(
     time: Res<Time>,
