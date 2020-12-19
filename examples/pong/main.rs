@@ -21,6 +21,7 @@ fn main() {
                 player_ai: 0,
             })
             .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+            .add_resource(TargetPosition { factor: 0.0 })
             .add_startup_system(setup.system())
             .add_system(on_exit.system())
             .add_system(local_resource_controller.thread_local_system())
@@ -39,6 +40,10 @@ enum Player {
 
 struct Game {
     audio_model: audio::Model,
+}
+
+struct TargetPosition {
+    factor: f32,
 }
 
 struct Paddle {
@@ -220,11 +225,18 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
         .collect();
     let fft_output = kopek::fft::fft(&fft_input);
     let frequency_domain = utils::get_frequency_domain_graph(&fft_output, 1.0);
-    let average_bins = utils::get_narrow_bar_spectrum(&frequency_domain);
+    let average_bins = utils::get_narrow_bar_spectrum_low(&frequency_domain);
 
-    average_bins
-        .iter()
-        .for_each(|f| println!("{}", (100.0 + f.y())));
+    // average_bins
+    //     .iter()
+    //     .for_each(|f| println!("{}", (100.0 + f.y())));
+    resources.get_mut::<TargetPosition>().unwrap().factor = 0.5;
+    for (i, bin) in average_bins.iter().enumerate() {
+        if 100.0 + bin.y() > 0.5 {
+            resources.get_mut::<TargetPosition>().unwrap().factor = i as f32;
+            break;
+        }
+    }
     // println!(
     //     "remaining: {}",
     //     resources
@@ -239,24 +251,29 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
 fn paddle_movement_system(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
+    target_position: Res<TargetPosition>,
     mut query: Query<(&Paddle, &Player, &mut Transform)>,
 ) {
     for (paddle, player, mut transform) in query.iter_mut() {
         if let Player::You = *player {
             let mut direction = 0.0;
+            let factor = target_position.factor - 0.5;
             if keyboard_input.pressed(KeyCode::A) {
-                direction += 1.0;
+                direction += 0.25;
             }
 
             if keyboard_input.pressed(KeyCode::Z) {
-                direction -= 1.0;
+                direction -= 0.25;
             }
 
-            if keyboard_input.pressed(KeyCode::Escape) {}
+            direction += factor * 0.25;
+            // println!("target position: {}", target_position.index);
 
             let translation = &mut transform.translation;
             // move the paddle horizontally
             *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
+
+            // *translation.y_mut() = -200.0 + target_position.index as f32 * 50.0;
             // bound the paddle within the walls
             *translation.y_mut() = translation.y().min(220.0).max(-220.0);
         } else if let Player::Ai = *player {

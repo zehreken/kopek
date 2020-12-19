@@ -97,3 +97,23 @@ pub fn get_narrow_bar_spectrum(frequency_line_points: &Vec<Vec2>) -> Vec<Vec2> {
 
     average_bins
 }
+
+pub fn get_narrow_bar_spectrum_low(frequency_line_points: &Vec<Vec2>) -> Vec<Vec2> {
+    let bin_sizes: Vec<i32> = vec![2, 2, 2, 2, 2, 2, 2, 498]; // In total 512 data points
+
+    let mut average_bins: Vec<Vec2> = vec![];
+    let mut start_index = 0;
+    for (i, bin_size) in bin_sizes.into_iter().enumerate() {
+        let end_index = start_index + bin_size;
+        let sum: f32 = frequency_line_points[start_index as usize..end_index as usize]
+            .iter()
+            .map(|v| v.y())
+            .sum();
+        let average = sum / bin_size as f32;
+
+        average_bins.push(vec2(-462.0 + 100.0 * i as f32, average));
+        start_index += bin_size;
+    }
+
+    average_bins
+}
