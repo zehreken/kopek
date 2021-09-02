@@ -1,5 +1,4 @@
 use bevy::{
-    core::FixedTimestep,
     prelude::*,
     render::pass::ClearColor,
     sprite::collide_aabb::{collide, Collision},
@@ -9,28 +8,29 @@ mod utils;
 mod audio;
 
 fn main() {
-    // let audio_model = audio::Model::new();
-    // if let Ok(am) = audio_model {
-    // am.output_stream.pause();
-    // let game = Game { audio_model: am };
-    App::build()
-        .add_plugins(DefaultPlugins)
-        // .add_thread_local_resource(game)
-        .insert_resource(Scoreboard {
-            player_you: 0,
-            player_ai: 0,
-        })
-        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
-        .insert_resource(TargetPosition { factor: 0.0 })
-        .add_startup_system(setup.system())
-        // .add_system(local_resource_controller.thread_local_system())
-        .add_system(paddle_movement_system.system())
-        .add_system(ball_collision_system.system())
-        .add_system(ball_movement_system.system())
-        .add_system(scoreboard_system.system())
-        .add_system(bevy::input::system::exit_on_esc_system.system())
-        .run();
-    // }
+    let audio_model = audio::Model::new();
+    if let Ok(am) = audio_model {
+        // am.output_stream.pause();
+        let game = Game { audio_model: am };
+        App::build()
+            .add_plugins(DefaultPlugins)
+            // .add_thread_local_resource(game)
+            .insert_non_send_resource(game)
+            .insert_resource(Scoreboard {
+                player_you: 0,
+                player_ai: 0,
+            })
+            .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+            .insert_resource(TargetPosition { factor: 0.0 })
+            .add_startup_system(setup.system())
+            .add_system(local_resource_controller.exclusive_system())
+            .add_system(paddle_movement_system.system())
+            .add_system(ball_collision_system.system())
+            .add_system(ball_movement_system.system())
+            .add_system(scoreboard_system.system())
+            .add_system(bevy::input::system::exit_on_esc_system.system())
+            .run();
+    }
 }
 
 enum Player {
@@ -177,8 +177,7 @@ fn setup(
         .insert(Collider::Solid);
 }
 
-/*
-fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
+fn local_resource_controller(world: &mut World) {
     // let consumer = &mut resources
     //     .get_thread_local_mut::<Game>()
     //     .unwrap()
@@ -196,8 +195,8 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
 
     let mut samples = vec![];
     for _ in 0..1024 {
-        let sample = match resources
-            .get_thread_local_mut::<Game>()
+        let sample = match world
+            .get_non_send_resource_mut::<Game>()
             .unwrap()
             .audio_model
             .consumer
@@ -223,6 +222,14 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
     // average_bins
     //     .iter()
     //     .for_each(|f| println!("{}", (100.0 + f.y())));
+    world.get_resource_mut::<TargetPosition>().unwrap().factor = 0.5;
+    for (i, bin) in average_bins.iter().enumerate() {
+        if 100.0 + bin.y > 0.5 {
+            world.get_resource_mut::<TargetPosition>().unwrap().factor = i as f32;
+            break;
+        }
+    }
+    /*
     resources.get_mut::<TargetPosition>().unwrap().factor = 0.5;
     for (i, bin) in average_bins.iter().enumerate() {
         if 100.0 + bin.y > 0.5 {
@@ -230,6 +237,7 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
             break;
         }
     }
+    */
     // println!(
     //     "remaining: {}",
     //     resources
@@ -240,7 +248,6 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
     //         .remaining()
     // );
 }
-*/
 
 fn paddle_movement_system(
     time: Res<Time>,
