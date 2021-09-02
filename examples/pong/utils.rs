@@ -85,7 +85,7 @@ pub fn get_narrow_bar_spectrum(frequency_line_points: &Vec<Vec2>) -> Vec<Vec2> {
         let end_index = start_index + bin_size;
         let sum: f32 = frequency_line_points[start_index as usize..end_index as usize]
             .iter()
-            .map(|v| v.y())
+            .map(|v| v.y)
             .sum();
         let average = sum / bin_size as f32;
 
@@ -107,7 +107,7 @@ pub fn get_narrow_bar_spectrum_low(frequency_line_points: &Vec<Vec2>) -> Vec<Vec
         let end_index = start_index + bin_size;
         let sum: f32 = frequency_line_points[start_index as usize..end_index as usize]
             .iter()
-            .map(|v| v.y())
+            .map(|v| v.y)
             .sum();
         let average = sum / bin_size as f32;
 

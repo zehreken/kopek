@@ -1,4 +1,5 @@
 use bevy::{
+    core::FixedTimestep,
     prelude::*,
     render::pass::ClearColor,
     sprite::collide_aabb::{collide, Collision},
@@ -8,29 +9,28 @@ mod utils;
 mod audio;
 
 fn main() {
-    let audio_model = audio::start();
-    if let Ok(am) = audio_model {
-        // am.output_stream.pause();
-        let game = Game { audio_model: am };
-        App::build()
-            .add_plugins(DefaultPlugins)
-            .add_system(bevy::input::system::exit_on_esc_system.system())
-            .add_thread_local_resource(game)
-            .add_resource(Scoreboard {
-                player_you: 0,
-                player_ai: 0,
-            })
-            .add_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
-            .add_resource(TargetPosition { factor: 0.0 })
-            .add_startup_system(setup.system())
-            .add_system(on_exit.system())
-            .add_system(local_resource_controller.thread_local_system())
-            .add_system(paddle_movement_system.system())
-            .add_system(ball_collision_system.system())
-            .add_system(ball_movement_system.system())
-            .add_system(scoreboard_system.system())
-            .run();
-    }
+    // let audio_model = audio::Model::new();
+    // if let Ok(am) = audio_model {
+    // am.output_stream.pause();
+    // let game = Game { audio_model: am };
+    App::build()
+        .add_plugins(DefaultPlugins)
+        // .add_thread_local_resource(game)
+        .insert_resource(Scoreboard {
+            player_you: 0,
+            player_ai: 0,
+        })
+        .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
+        .insert_resource(TargetPosition { factor: 0.0 })
+        .add_startup_system(setup.system())
+        // .add_system(local_resource_controller.thread_local_system())
+        .add_system(paddle_movement_system.system())
+        .add_system(ball_collision_system.system())
+        .add_system(ball_movement_system.system())
+        .add_system(scoreboard_system.system())
+        .add_system(bevy::input::system::exit_on_esc_system.system())
+        .run();
+    // }
 }
 
 enum Player {
@@ -71,61 +71,64 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
+    // cameras
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(UiCameraBundle::default());
+    // paddle one
     commands
-        // cameras
-        .spawn(Camera2dComponents::default())
-        .spawn(UiCameraComponents::default())
-        // paddle one
-        .spawn(SpriteComponents {
+        .spawn_bundle(SpriteBundle {
             material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
             transform: Transform::from_translation(Vec3::new(-400.0, 0.0, 0.0)),
             sprite: Sprite::new(Vec2::new(30.0, 120.0)),
             ..Default::default()
         })
-        .with(Player::You)
-        .with(Paddle { speed: 500.0 })
-        .with(Collider::Paddle)
-        // paddle two
-        .spawn(SpriteComponents {
+        .insert(Player::You)
+        .insert(Paddle { speed: 500.0 })
+        .insert(Collider::Paddle);
+    // paddle two
+    commands
+        .spawn_bundle(SpriteBundle {
             material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
             transform: Transform::from_translation(Vec3::new(400.0, 0.0, 0.0)),
             sprite: Sprite::new(Vec2::new(30.0, 120.0)),
             ..Default::default()
         })
-        .with(Player::Ai)
-        .with(Paddle { speed: 500.0 })
-        .with(Collider::Paddle)
-        // ball
-        .spawn(SpriteComponents {
+        .insert(Player::Ai)
+        .insert(Paddle { speed: 500.0 })
+        .insert(Collider::Paddle);
+    // ball
+    commands
+        .spawn_bundle(SpriteBundle {
             material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
             transform: Transform::from_translation(Vec3::new(0.0, -50.0, 1.0)),
             sprite: Sprite::new(Vec2::new(30.0, 30.0)),
             ..Default::default()
         })
-        .with(Ball {
+        .insert(Ball {
             velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
-        })
-        // scoreboard
-        .spawn(TextComponents {
-            text: Text {
+        });
+    // scoreboard
+    commands.spawn_bundle(TextBundle {
+        text: Text::with_section(
+            "",
+            TextStyle {
                 font: asset_server.load("fonts/emulogic.ttf"),
-                value: "".to_string(),
-                style: TextStyle {
-                    color: Color::rgb(0.5, 0.5, 1.0),
-                    font_size: 40.0,
-                },
+                color: Color::rgb(0.5, 0.5, 1.0),
+                font_size: 40.0,
             },
-            style: Style {
-                position_type: PositionType::Absolute,
-                position: Rect {
-                    top: Val::Px(5.0),
-                    left: Val::Px(5.0),
-                    ..Default::default()
-                },
+            Default::default(),
+        ),
+        style: Style {
+            position_type: PositionType::Absolute,
+            position: Rect {
+                top: Val::Px(5.0),
+                left: Val::Px(5.0),
                 ..Default::default()
             },
             ..Default::default()
-        });
+        },
+        ..Default::default()
+    });
 
     // wals
     let wall_material = materials.add(Color::rgb(0.8, 0.8, 0.8).into());
@@ -134,57 +137,47 @@ fn setup(
 
     commands
         // left
-        .spawn(SpriteComponents {
+        .spawn_bundle(SpriteBundle {
             material: wall_material.clone(),
-            transform: Transform::from_translation(Vec3::new(-bounds.x() / 2.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y() + wall_thickness)),
+            transform: Transform::from_translation(Vec3::new(-bounds.x / 2.0, 0.0, 0.0)),
+            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
             ..Default::default()
         })
-        .with(Collider::Solid)
-        .with(Collider::ScorableYou)
-        .with(Player::You)
-        // right
-        .spawn(SpriteComponents {
+        .insert(Collider::Solid)
+        .insert(Collider::ScorableYou)
+        .insert(Player::You);
+    // right
+    commands
+        .spawn_bundle(SpriteBundle {
             material: wall_material.clone(),
-            transform: Transform::from_translation(Vec3::new(bounds.x() / 2.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y() + wall_thickness)),
+            transform: Transform::from_translation(Vec3::new(bounds.x / 2.0, 0.0, 0.0)),
+            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
             ..Default::default()
         })
-        .with(Collider::Solid)
-        .with(Collider::ScorableAi)
-        .with(Player::Ai)
-        // bottom
-        .spawn(SpriteComponents {
+        .insert(Collider::Solid)
+        .insert(Collider::ScorableAi)
+        .insert(Player::Ai);
+    // bottom
+    commands
+        .spawn_bundle(SpriteBundle {
             material: wall_material.clone(),
-            transform: Transform::from_translation(Vec3::new(0.0, -bounds.y() / 2.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(bounds.x() + wall_thickness, wall_thickness)),
+            transform: Transform::from_translation(Vec3::new(0.0, -bounds.y / 2.0, 0.0)),
+            sprite: Sprite::new(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
             ..Default::default()
         })
-        .with(Collider::Solid)
-        // top
-        .spawn(SpriteComponents {
+        .insert(Collider::Solid);
+    // top
+    commands
+        .spawn_bundle(SpriteBundle {
             material: wall_material,
-            transform: Transform::from_translation(Vec3::new(0.0, bounds.y() / 2.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(bounds.x() + wall_thickness, wall_thickness)),
+            transform: Transform::from_translation(Vec3::new(0.0, bounds.y / 2.0, 0.0)),
+            sprite: Sprite::new(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
             ..Default::default()
         })
-        .with(Collider::Solid);
+        .insert(Collider::Solid);
 }
 
-fn on_exit(
-    ev_exit: Res<Events<bevy::app::AppExit>>,
-    mut reader: Local<EventReader<bevy::app::AppExit>>,
-) {
-    // You can send exit event from anywhere in the code using the line below
-    // ev_exit.send(bevy::app::AppExit);
-    for ev in reader.iter(&ev_exit) {
-        println!("{:?}", ev);
-        // let audio_model = resources.get_thread_local::<Game>().unwrap().audio_model;
-        // audio::stop(audio_model);
-        // Clean up audio thread
-    }
-}
-
+/*
 fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
     // let consumer = &mut resources
     //     .get_thread_local_mut::<Game>()
@@ -232,7 +225,7 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
     //     .for_each(|f| println!("{}", (100.0 + f.y())));
     resources.get_mut::<TargetPosition>().unwrap().factor = 0.5;
     for (i, bin) in average_bins.iter().enumerate() {
-        if 100.0 + bin.y() > 0.5 {
+        if 100.0 + bin.y > 0.5 {
             resources.get_mut::<TargetPosition>().unwrap().factor = i as f32;
             break;
         }
@@ -247,6 +240,7 @@ fn local_resource_controller(_world: &mut World, resources: &mut Resources) {
     //         .remaining()
     // );
 }
+*/
 
 fn paddle_movement_system(
     time: Res<Time>,
@@ -271,11 +265,11 @@ fn paddle_movement_system(
 
             let translation = &mut transform.translation;
             // move the paddle horizontally
-            *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
+            translation.y += time.delta_seconds() * direction * paddle.speed;
 
             // *translation.y_mut() = -200.0 + target_position.index as f32 * 50.0;
             // bound the paddle within the walls
-            *translation.y_mut() = translation.y().min(220.0).max(-220.0);
+            translation.y = translation.y.min(220.0).max(-220.0);
         } else if let Player::Ai = *player {
             let mut direction = 0.0;
             if keyboard_input.pressed(KeyCode::J) {
@@ -287,15 +281,15 @@ fn paddle_movement_system(
             }
 
             let translation = &mut transform.translation;
-            *translation.y_mut() += time.delta_seconds * direction * paddle.speed;
-            *translation.y_mut() = translation.y().min(220.0).max(-220.0);
+            translation.y += time.delta_seconds() * direction * paddle.speed;
+            translation.y = translation.y.min(220.0).max(-220.0);
         }
     }
 }
 
 fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Transform)>) {
     // clamp the timestep to stop the ball from escaping when the game starts
-    let delta_seconds = f32::min(0.2, time.delta_seconds);
+    let delta_seconds = f32::min(0.2, time.delta_seconds());
 
     for (ball, mut transform) in ball_query.iter_mut() {
         transform.translation += ball.velocity * delta_seconds;
@@ -303,12 +297,11 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
 }
 
 fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
-    for mut text in query.iter_mut() {
-        text.value = format!(
-            "YOU:{}                       {}:AI",
-            scoreboard.player_you, scoreboard.player_ai
-        );
-    }
+    let mut text = query.single_mut().unwrap();
+    text.sections[0].value = format!(
+        "YOU:{}                       {}:AI",
+        scoreboard.player_you, scoreboard.player_ai
+    );
 }
 
 fn ball_collision_system(
@@ -343,20 +336,20 @@ fn ball_collision_system(
 
                 // only reflect if the ball's velocity is going in the opposite direction of the collision
                 match collision {
-                    Collision::Left => reflect_x = velocity.x() > 0.0,
-                    Collision::Right => reflect_x = velocity.x() < 0.0,
-                    Collision::Top => reflect_y = velocity.y() < 0.0,
-                    Collision::Bottom => reflect_y = velocity.y() > 0.0,
+                    Collision::Left => reflect_x = velocity.x > 0.0,
+                    Collision::Right => reflect_x = velocity.x < 0.0,
+                    Collision::Top => reflect_y = velocity.y < 0.0,
+                    Collision::Bottom => reflect_y = velocity.y > 0.0,
                 }
 
                 // reflect velocity on the x-axis if we hit something on the x-axis
                 if reflect_x {
-                    *velocity.x_mut() = -velocity.x();
+                    velocity.x = -velocity.x;
                 }
 
                 // reflect velocity on the y-axis if we hit something on the x-axis
                 if reflect_y {
-                    *velocity.y_mut() = -velocity.y();
+                    velocity.y = -velocity.y;
                 }
 
                 // break if this collidera is on a solid, otherwise continue check whether a solid is also in collision
