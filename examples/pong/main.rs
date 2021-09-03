@@ -229,15 +229,6 @@ fn local_resource_controller(world: &mut World) {
             break;
         }
     }
-    /*
-    resources.get_mut::<TargetPosition>().unwrap().factor = 0.5;
-    for (i, bin) in average_bins.iter().enumerate() {
-        if 100.0 + bin.y > 0.5 {
-            resources.get_mut::<TargetPosition>().unwrap().factor = i as f32;
-            break;
-        }
-    }
-    */
     // println!(
     //     "remaining: {}",
     //     resources
@@ -312,7 +303,7 @@ fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
 }
 
 fn ball_collision_system(
-    mut commands: Commands,
+    mut _commands: Commands,
     mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &Transform, &Sprite)>,
     collider_query: Query<(Entity, &Collider, &Transform, &Sprite)>,
@@ -322,7 +313,7 @@ fn ball_collision_system(
         let velocity = &mut ball.velocity;
 
         // check collision with walls
-        for (collider_entity, collider, transform, sprite) in collider_query.iter() {
+        for (_collider_entity, collider, transform, sprite) in collider_query.iter() {
             let collision = collide(
                 ball_transform.translation,
                 ball_size,
