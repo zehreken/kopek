@@ -1,6 +1,7 @@
 extern crate kopek;
 use super::consts;
 use super::utils;
+use super::utils::*;
 use nannou::prelude::*;
 use nannou_audio as audio;
 use nannou_audio::Buffer;
