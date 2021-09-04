@@ -1,8 +1,8 @@
 extern crate kopek;
 use super::consts;
 use super::utils;
+use super::utils::*;
 use cpal::traits::{DeviceTrait, EventLoopTrait, HostTrait};
-use nannou::prelude::*;
 use pprof;
 use std::sync::mpsc::{Receiver, Sender};
 

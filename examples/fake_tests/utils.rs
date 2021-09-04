@@ -1,6 +1,10 @@
 use super::consts;
-use nannou::prelude::*;
 use num::complex::Complex;
+
+pub struct Point2 {
+    x: f32,
+    y: f32,
+}
 
 // The representable range is 22050 if sample rate is 44100
 // Frequency bin size is for each element in the output vector

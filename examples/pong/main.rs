@@ -258,7 +258,7 @@ fn paddle_movement_system(
                 direction -= 0.25;
             }
 
-            direction += factor * 0.25;
+            direction += factor * 0.75;
             // println!("target position: {}", target_position.index);
 
             let translation = &mut transform.translation;
