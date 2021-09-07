@@ -12,5 +12,6 @@ mod utils;
 fn main() {
     let app = app::TemplateApp::default();
     let native_options = eframe::NativeOptions::default();
+    let player = player::Player::new();
     eframe::run_native(Box::new(app), native_options);
 }
