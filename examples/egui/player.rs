@@ -105,11 +105,9 @@ where
         output_config.channels, output_config.sample_rate
     );
 
-    std::thread::spawn(move || {
-        let output_stream = create_output_stream(&output_device, &output_config, frames);
-        output_stream.play().expect("Error while playing");
-        std::thread::sleep(std::time::Duration::from_millis(5000));
-    });
+    let output_stream = create_output_stream(&output_device, &output_config, frames);
+    output_stream.play().expect("Error while playing");
+    std::thread::sleep(std::time::Duration::from_millis(5000));
 }
 
 fn create_output_stream(
