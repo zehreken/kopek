@@ -17,7 +17,8 @@ const PATHS: [&str; 1] = [
     // "sine_440hz_stereo.ogg",
     // "stress_free.wav",
     // "overture.wav",
-    "100_200_400_1000_10000.wav",
+    // "100_200_400_1000_10000.wav",
+    "sample.wav",
 ];
 
 pub struct Player {
@@ -85,9 +86,10 @@ where
 {
     let frames = kopek::decoder::decode(path);
 
-    let frames: Vec<[f32; 2]> = frames
+    let frames: Vec<f32> = frames
         .iter()
-        .map(|frame| [frame[0] as f32, frame[1] as f32])
+        .map(|frame| [0.00002 * frame[0] as f32, 0.00002 * frame[1] as f32])
+        .flatten()
         .collect();
 
     // let mut cycling = frames.into_iter().clone().cycle();
@@ -103,20 +105,24 @@ where
         output_config.channels, output_config.sample_rate
     );
 
-    let output_stream = create_output_stream(&output_device, &output_config, frames);
-
-    output_stream.play();
-    std::thread::sleep(std::time::Duration::from_millis(1000));
+    std::thread::spawn(move || {
+        let output_stream = create_output_stream(&output_device, &output_config, frames);
+        output_stream.play().expect("Error while playing");
+        std::thread::sleep(std::time::Duration::from_millis(5000));
+    });
 }
 
 fn create_output_stream(
     output_device: &Device,
     config: &StreamConfig,
-    track: Vec<[f32; 2]>,
+    track: Vec<f32>,
 ) -> cpal::Stream {
+    let mut index = 0;
     let output_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
         for sample in data {
-            *sample = track.iter().next().unwrap()[0];
+            *sample = track[index];
+            index += 1;
+            // println!("{}", sample);
         }
     };
 
