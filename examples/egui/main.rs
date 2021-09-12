@@ -10,8 +10,8 @@ mod utils;
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
+    let player = player::Player::new();
     let app = app::TemplateApp::default();
     let native_options = eframe::NativeOptions::default();
-    let player = player::Player::new();
     eframe::run_native(Box::new(app), native_options);
 }

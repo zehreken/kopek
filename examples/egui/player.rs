@@ -86,9 +86,10 @@ where
 {
     let frames = kopek::decoder::decode(path);
 
+    let factor = 0.00002;
     let frames: Vec<f32> = frames
         .iter()
-        .map(|frame| [0.00002 * frame[0] as f32, 0.00002 * frame[1] as f32])
+        .map(|frame| [factor * frame[0] as f32, factor * frame[1] as f32])
         .flatten()
         .collect();
 
@@ -105,9 +106,11 @@ where
         output_config.channels, output_config.sample_rate
     );
 
-    let output_stream = create_output_stream(&output_device, &output_config, frames);
-    output_stream.play().expect("Error while playing");
-    std::thread::sleep(std::time::Duration::from_millis(5000));
+    std::thread::spawn(move || {
+        let output_stream = create_output_stream(&output_device, &output_config, frames);
+        output_stream.play().expect("Error while playing");
+        std::thread::sleep(std::time::Duration::from_millis(1000));
+    });
 }
 
 fn create_output_stream(
@@ -120,7 +123,6 @@ fn create_output_stream(
         for sample in data {
             *sample = track[index];
             index += 1;
-            // println!("{}", sample);
         }
     };
 
