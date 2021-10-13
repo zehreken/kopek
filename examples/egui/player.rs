@@ -1,13 +1,13 @@
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
-    Device, StreamConfig,
+    Device, Host, StreamConfig,
 };
 
 use super::utils;
 use super::utils::*;
 use std::sync::mpsc::{Receiver, Sender};
 
-const PATHS: [&str; 1] = [
+pub const PATHS: [&str; 1] = [
     // "sine_100.ogg",
     // "sine_200.ogg",
     // "sine_440.ogg",
@@ -22,6 +22,7 @@ const PATHS: [&str; 1] = [
 ];
 
 pub struct Player {
+    audio_host: Host,
     receiver: Receiver<Vec<[i16; 2]>>,
     time_line_points: Vec<Point2>,
     frequency_line_points: Vec<Point2>,
@@ -30,10 +31,11 @@ pub struct Player {
 
 impl Player {
     pub fn new() -> Self {
+        /* This part is not really necessary
         let sample_size = 1024;
         let start = 0;
         let end = start + sample_size;
-        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size];
+        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size]; // Not used currently
         for path in PATHS.iter() {
             let frames = &kopek::decoder::decode(path)[start..end];
             for (i, frame) in frames.iter().enumerate() {
@@ -41,12 +43,33 @@ impl Player {
                 frames_sum[i][1] += frame[1] / PATHS.len() as i16;
             }
         }
+        */
+
+        let host = cpal::default_host();
+        for device in host.devices().unwrap() {
+            println!("Device: {:?}", device.name());
+            if let Ok(input_config) = device.default_input_config() {
+                println!("Input buffer size: {:?}", input_config.buffer_size());
+                println!("Input channel count: {:?}", input_config.channels());
+            } else {
+                println!("No input config for this device");
+            }
+
+            if let Ok(output_config) = device.default_output_config() {
+                println!("Output buffer size: {:?}", output_config.buffer_size());
+                println!("Output channel count: {:?}", output_config.channels());
+            } else {
+                println!("No output config for this device");
+            }
+            println!("\n");
+        }
 
         let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
         // play_ogg(PATHS[PATHS.len() - 1], sender);
-        play(PATHS[PATHS.len() - 1]);
+        // play(PATHS[PATHS.len() - 1]);
 
         Player {
+            audio_host: host,
             receiver,
             time_line_points: vec![],
             frequency_line_points: vec![],
@@ -78,39 +101,36 @@ impl Player {
             self.scale_points = utils::get_scale(128);
         }
     }
-}
 
-fn play<P>(path: P)
-where
-    P: AsRef<std::path::Path>,
-{
-    let frames = kopek::decoder::decode(path);
+    pub fn play<P>(&self, path: P)
+    where
+        P: AsRef<std::path::Path>,
+    {
+        let frames = kopek::decoder::decode(path);
 
-    let factor = 0.00002;
-    let frames: Vec<f32> = frames
-        .iter()
-        .map(|frame| [factor * frame[0] as f32, factor * frame[1] as f32])
-        .flatten()
-        .collect();
+        let factor = 0.00002;
+        let frames: Vec<f32> = frames
+            .iter()
+            .map(|frame| [factor * frame[0] as f32, factor * frame[1] as f32])
+            .flatten()
+            .collect();
 
-    // let mut cycling = frames.into_iter().clone().cycle();
+        let output_device = self
+            .audio_host
+            .default_output_device()
+            .expect("Output device not found");
+        let output_config: StreamConfig = output_device.default_output_config().unwrap().into();
+        println!(
+            "{:?}, {:?}",
+            output_config.channels, output_config.sample_rate,
+        );
 
-    let host = cpal::default_host();
-
-    let output_device = host
-        .default_output_device()
-        .expect("Output device not found!");
-    let output_config: StreamConfig = output_device.default_output_config().unwrap().into();
-    println!(
-        "{:?}, {:?}",
-        output_config.channels, output_config.sample_rate
-    );
-
-    std::thread::spawn(move || {
-        let output_stream = create_output_stream(&output_device, &output_config, frames);
-        output_stream.play().expect("Error while playing");
-        std::thread::sleep(std::time::Duration::from_millis(1000));
-    });
+        std::thread::spawn(move || {
+            let output_stream = create_output_stream(&output_device, &output_config, frames);
+            output_stream.play().expect("Error while playing");
+            std::thread::sleep(std::time::Duration::from_millis(1000));
+        });
+    }
 }
 
 fn create_output_stream(
