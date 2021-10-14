@@ -66,9 +66,19 @@ impl epi::App for AnalyseView {
 
             ui.heading("Frequency domain analysis");
 
-            let line = line_from_points(&self.player.time_line_points);
-            let plot = Plot::new("wave").line(line);
-            ui.add(plot);
+            let waveform_line = line_from_points(
+                &self.player.waveform_graph_points,
+                Color32::from_rgb(200, 100, 100),
+            );
+            let waveform_plot = Plot::new("wave").line(waveform_line);
+            // ui.add(waveform_plot);
+
+            let frequency_line = line_from_points(
+                &self.player.frequency_graph_points,
+                Color32::from_rgb(100, 200, 100),
+            );
+            let frequency_plot = Plot::new("frequency").line(frequency_line);
+            ui.add(frequency_plot);
             egui::warn_if_debug_build(ui);
         });
 
@@ -76,16 +86,14 @@ impl epi::App for AnalyseView {
     }
 }
 
-fn line_from_points(points: &Vec<Point2>) -> Line {
+fn line_from_points(points: &Vec<Point2>, color: Color32) -> Line {
     let mut ys: [f32; 1024] = [0.0; 1024];
     for (i, p) in points.iter().enumerate() {
         ys[i] = p.y;
     }
 
     let values = Values::from_ys_f32(&ys);
-    let line = Line::new(values)
-        .color(Color32::from_rgb(200, 100, 100))
-        .name("wave");
+    let line = Line::new(values).color(color).name("line");
 
     line
 }

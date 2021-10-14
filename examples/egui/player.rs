@@ -17,16 +17,16 @@ pub const PATHS: [&str; 1] = [
     // "sine_440hz_stereo.ogg",
     // "stress_free.wav",
     // "overture.wav",
-    // "100_200_400_1000_10000.wav",
-    "sample.wav",
+    "100_200_400_1000_10000.wav",
+    // "sample.wav",
 ];
 
 pub struct Player {
     audio_host: Host,
     sender: Sender<Vec<[f32; 2]>>,
     receiver: Receiver<Vec<[f32; 2]>>,
-    pub time_line_points: Vec<Point2>,
-    pub frequency_line_points: Vec<Point2>,
+    pub waveform_graph_points: Vec<Point2>,
+    pub frequency_graph_points: Vec<Point2>,
     pub scale_points: Vec<Point2>,
 }
 
@@ -66,15 +66,13 @@ impl Player {
         }
 
         let (sender, receiver) = std::sync::mpsc::channel::<Vec<[f32; 2]>>();
-        // play_ogg(PATHS[PATHS.len() - 1], sender);
-        // play(PATHS[PATHS.len() - 1]);
 
         Player {
             audio_host: host,
             sender,
             receiver,
-            time_line_points: vec![],
-            frequency_line_points: vec![],
+            waveform_graph_points: vec![],
+            frequency_graph_points: vec![],
             scale_points: vec![],
         }
     }
@@ -99,8 +97,8 @@ impl Player {
                 .iter()
                 .map(|frame| 100.0 + frame[0] as f32 / 500.0)
                 .collect();
-            self.time_line_points = utils::get_waveform_graph(&frame_slice, 1.0);
-            self.frequency_line_points = utils::get_frequency_domain_graph(&fft_output, 2.0);
+            self.waveform_graph_points = utils::get_waveform_graph(&frame_slice, 1.0);
+            self.frequency_graph_points = utils::get_frequency_domain_graph(&fft_output, 2.0);
             self.scale_points = utils::get_scale(128);
         }
     }
@@ -134,7 +132,7 @@ impl Player {
         std::thread::spawn(move || {
             let output_stream = create_output_stream(&output_device, &output_config, frames, s);
             output_stream.play().expect("Error while playing");
-            std::thread::sleep(std::time::Duration::from_millis(1000));
+            std::thread::sleep(std::time::Duration::from_millis(10000));
         });
     }
 }
