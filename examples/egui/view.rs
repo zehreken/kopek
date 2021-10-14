@@ -1,3 +1,4 @@
+use super::utils::Point2;
 use eframe::{egui, epi};
 use egui::{
     plot::{Line, Plot, Values},
@@ -65,20 +66,7 @@ impl epi::App for AnalyseView {
 
             ui.heading("Frequency domain analysis");
 
-            // let plot: Plot = Plot::new("lines").line(self.sin());
-            let mut ys: [f32; 1024] = [0.0; 1024];
-            for (i, p) in self.player.time_line_points.iter().enumerate() {
-                ys[i] = p.y;
-            }
-            let values = Values::from_ys_f32(&ys);
-            // let line = Line::new(Values::from_explicit_callback(
-            //     move |x| 0.5 * (2.0 * x).sin() * 1.0,
-            //     -10.0..10.0,
-            //     512,
-            // ))
-            let line = Line::new(values)
-                .color(Color32::from_rgb(200, 100, 100))
-                .name("wave");
+            let line = line_from_points(&self.player.time_line_points);
             let plot = Plot::new("wave").line(line);
             ui.add(plot);
             egui::warn_if_debug_build(ui);
@@ -86,6 +74,20 @@ impl epi::App for AnalyseView {
 
         ctx.request_repaint(); // Make UI continuous
     }
+}
+
+fn line_from_points(points: &Vec<Point2>) -> Line {
+    let mut ys: [f32; 1024] = [0.0; 1024];
+    for (i, p) in points.iter().enumerate() {
+        ys[i] = p.y;
+    }
+
+    let values = Values::from_ys_f32(&ys);
+    let line = Line::new(values)
+        .color(Color32::from_rgb(200, 100, 100))
+        .name("wave");
+
+    line
 }
 
 impl AnalyseView {
