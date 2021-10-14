@@ -63,22 +63,18 @@ impl epi::App for AnalyseView {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-
             ui.heading("Frequency domain analysis");
 
             let waveform_line = line_from_points(
                 &self.player.waveform_graph_points,
                 Color32::from_rgb(200, 100, 100),
             );
-            let waveform_plot = Plot::new("wave").line(waveform_line);
-            // ui.add(waveform_plot);
 
             let frequency_line = line_from_points(
                 &self.player.frequency_graph_points,
                 Color32::from_rgb(100, 200, 100),
             );
-            let frequency_plot = Plot::new("frequency").line(frequency_line);
-            ui.add(frequency_plot);
+            ui.add(Plot::new("graph").line(frequency_line).line(waveform_line));
             egui::warn_if_debug_build(ui);
         });
 
@@ -99,6 +95,7 @@ fn line_from_points(points: &Vec<Point2>, color: Color32) -> Line {
 }
 
 impl AnalyseView {
+    #[deprecated]
     fn sin(&self) -> Line {
         Line::new(Values::from_explicit_callback(
             move |x| 0.5 * (2.0 * x).sin() * 1.0,

@@ -27,7 +27,7 @@ pub struct Player {
     receiver: Receiver<Vec<[f32; 2]>>,
     pub waveform_graph_points: Vec<Point2>,
     pub frequency_graph_points: Vec<Point2>,
-    pub scale_points: Vec<Point2>,
+    // pub scale_points: Vec<Point2>,
 }
 
 impl Player {
@@ -73,7 +73,7 @@ impl Player {
             receiver,
             waveform_graph_points: vec![],
             frequency_graph_points: vec![],
-            scale_points: vec![],
+            // scale_points: vec![],
         }
     }
 
@@ -84,7 +84,7 @@ impl Player {
             frames = f;
         }
 
-        println!("received: {:?}", frames[0]);
+        // println!("received: {:?}", frames[0]);
         let fft_input: Vec<_> = frames
             .iter()
             .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
@@ -95,11 +95,11 @@ impl Player {
         if frames.len() > 0 {
             let frame_slice = frames
                 .iter()
-                .map(|frame| 100.0 + frame[0] as f32 / 500.0)
+                .map(|frame| 30.0 + frame[0] as f32 * 20.0)
                 .collect();
             self.waveform_graph_points = utils::get_waveform_graph(&frame_slice, 1.0);
-            self.frequency_graph_points = utils::get_frequency_domain_graph(&fft_output, 2.0);
-            self.scale_points = utils::get_scale(128);
+            self.frequency_graph_points = utils::get_frequency_domain_graph(&fft_output, 1.0);
+            // self.scale_points = utils::get_scale(128);
         }
     }
 
@@ -130,9 +130,11 @@ impl Player {
 
         let s = self.sender.clone();
         std::thread::spawn(move || {
+            let duration_in_seconds: u64 = frames.len() as u64 / (44100 * 2);
+            println!("duration: {}", duration_in_seconds);
             let output_stream = create_output_stream(&output_device, &output_config, frames, s);
             output_stream.play().expect("Error while playing");
-            std::thread::sleep(std::time::Duration::from_millis(10000));
+            std::thread::sleep(std::time::Duration::from_millis(duration_in_seconds * 1000));
         });
     }
 }

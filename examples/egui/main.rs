@@ -12,7 +12,6 @@ mod view;
 #[cfg(not(target_arch = "wasm32"))]
 fn main() {
     let player = player::Player::new();
-    player.play(player::PATHS[player::PATHS.len() - 1]);
 
     let app = view::AnalyseView::default();
     let native_options = eframe::NativeOptions::default();
