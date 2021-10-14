@@ -8,56 +8,33 @@ use egui::{
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct AnalyseView {
-    // Example stuff:
-    label: String,
-
-    // this how you opt-out of serialization of a member
-    #[cfg_attr(feature = "persistence", serde(skip))]
-    value: f32,
+    player: super::player::Player,
 }
 
 impl Default for AnalyseView {
     fn default() -> Self {
         Self {
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            player: super::player::Player::new(),
         }
     }
 }
 
 impl epi::App for AnalyseView {
     fn name(&self) -> &str {
-        "Frequency Domain Analysis"
-    }
-
-    /// Called by the framework to load old app state (if any).
-    #[cfg(feature = "persistence")]
-    fn setup(
-        &mut self,
-        _ctx: &egui::CtxRef,
-        _frame: &mut epi::Frame<'_>,
-        storage: Option<&dyn epi::Storage>,
-    ) {
-        if let Some(storage) = storage {
-            *self = epi::get_value(storage, epi::APP_KEY).unwrap_or_default()
-        }
-    }
-
-    /// Called by the frame work to save state before shutdown.
-    #[cfg(feature = "persistence")]
-    fn save(&mut self, storage: &mut dyn epi::Storage) {
-        epi::set_value(storage, epi::APP_KEY, self);
+        "analysis view"
     }
 
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
-        let Self { label, value } = self;
+        // let Self { label, value } = self;
 
         // Examples of how to create different panels and windows.
         // Pick whichever suits you.
         // Tip: a good default choice is to just keep the `CentralPanel`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
+
+        self.player.update();
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
@@ -67,6 +44,19 @@ impl epi::App for AnalyseView {
                         frame.quit();
                     }
                 });
+
+                ui.separator();
+
+                if ui.button("Play").clicked() {
+                    self.player
+                        .play(super::player::PATHS[super::player::PATHS.len() - 1]);
+                }
+                if ui.button("Pause").clicked() {
+                    // pause player
+                }
+                if ui.button("Stop").clicked() {
+                    // stop player
+                }
             });
         });
 
@@ -75,19 +65,26 @@ impl epi::App for AnalyseView {
 
             ui.heading("Frequency domain analysis");
 
-            let mut plot = Plot::new("lines").line(self.sin());
+            // let plot: Plot = Plot::new("lines").line(self.sin());
+            let mut ys: [f32; 1024] = [0.0; 1024];
+            for (i, p) in self.player.time_line_points.iter().enumerate() {
+                ys[i] = p.y;
+            }
+            let values = Values::from_ys_f32(&ys);
+            // let line = Line::new(Values::from_explicit_callback(
+            //     move |x| 0.5 * (2.0 * x).sin() * 1.0,
+            //     -10.0..10.0,
+            //     512,
+            // ))
+            let line = Line::new(values)
+                .color(Color32::from_rgb(200, 100, 100))
+                .name("wave");
+            let plot = Plot::new("wave").line(line);
             ui.add(plot);
             egui::warn_if_debug_build(ui);
         });
 
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally chose either panels OR windows.");
-            });
-        }
+        ctx.request_repaint(); // Make UI continuous
     }
 }
 

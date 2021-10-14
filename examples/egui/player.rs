@@ -23,10 +23,11 @@ pub const PATHS: [&str; 1] = [
 
 pub struct Player {
     audio_host: Host,
-    receiver: Receiver<Vec<[i16; 2]>>,
-    time_line_points: Vec<Point2>,
-    frequency_line_points: Vec<Point2>,
-    scale_points: Vec<Point2>,
+    sender: Sender<Vec<[f32; 2]>>,
+    receiver: Receiver<Vec<[f32; 2]>>,
+    pub time_line_points: Vec<Point2>,
+    pub frequency_line_points: Vec<Point2>,
+    pub scale_points: Vec<Point2>,
 }
 
 impl Player {
@@ -64,12 +65,13 @@ impl Player {
             println!("\n");
         }
 
-        let (sender, receiver) = std::sync::mpsc::channel::<Vec<[i16; 2]>>();
+        let (sender, receiver) = std::sync::mpsc::channel::<Vec<[f32; 2]>>();
         // play_ogg(PATHS[PATHS.len() - 1], sender);
         // play(PATHS[PATHS.len() - 1]);
 
         Player {
             audio_host: host,
+            sender,
             receiver,
             time_line_points: vec![],
             frequency_line_points: vec![],
@@ -78,12 +80,13 @@ impl Player {
     }
 
     pub fn update(&mut self) {
-        let mut frames = vec![[0; 2]; 1024];
+        let mut frames = vec![[0.0; 2]; 1024];
         // Get the most recent frame
         for f in self.receiver.try_iter() {
             frames = f;
         }
 
+        println!("received: {:?}", frames[0]);
         let fft_input: Vec<_> = frames
             .iter()
             .map(|frame| std::convert::From::from(frame[0] as f64 / std::i16::MAX as f64))
@@ -115,6 +118,8 @@ impl Player {
             .flatten()
             .collect();
 
+        println!("frames: {}", frames.len());
+
         let output_device = self
             .audio_host
             .default_output_device()
@@ -125,8 +130,9 @@ impl Player {
             output_config.channels, output_config.sample_rate,
         );
 
+        let s = self.sender.clone();
         std::thread::spawn(move || {
-            let output_stream = create_output_stream(&output_device, &output_config, frames);
+            let output_stream = create_output_stream(&output_device, &output_config, frames, s);
             output_stream.play().expect("Error while playing");
             std::thread::sleep(std::time::Duration::from_millis(1000));
         });
@@ -137,12 +143,20 @@ fn create_output_stream(
     output_device: &Device,
     config: &StreamConfig,
     track: Vec<f32>,
+    sender: Sender<Vec<[f32; 2]>>,
 ) -> cpal::Stream {
     let mut index = 0;
     let output_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
+        let mut frames: Vec<[f32; 2]> = vec![];
         for sample in data {
             *sample = track[index];
+            frames.push([*sample; 2]);
             index += 1;
+        }
+
+        match sender.send(frames) {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error: {}", err),
         }
     };
 

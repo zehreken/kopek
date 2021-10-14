@@ -2,8 +2,8 @@ use super::consts;
 use num::complex::Complex;
 
 pub struct Point2 {
-    x: f32,
-    y: f32,
+    pub x: f32,
+    pub y: f32,
 }
 
 // The representable range is 22050 if sample rate is 44100
