@@ -221,12 +221,13 @@ fn local_resource_controller(world: &mut World) {
 
     // average_bins
     //     .iter()
-    //     .for_each(|f| println!("{}", (100.0 + f.y())));
+    //     .for_each(|f| println!("{}", (100.0 + f.y)));
     world.get_resource_mut::<TargetPosition>().unwrap().factor = 0.5;
     for (i, bin) in average_bins.iter().enumerate() {
+        println!("i {}, bin {}", i, bin.y);
         if 100.0 + bin.y > 0.5 {
             world.get_resource_mut::<TargetPosition>().unwrap().factor = i as f32;
-            break;
+            // break;
         }
     }
     // println!(

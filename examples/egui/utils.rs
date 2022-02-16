@@ -1,6 +1,7 @@
 use super::consts;
 use num::complex::Complex;
 
+#[derive(Debug)]
 pub struct Point2 {
     pub x: f32,
     pub y: f32,

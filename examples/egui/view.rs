@@ -8,11 +8,11 @@ use egui::{
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
-pub struct AnalyseView {
+pub struct AnalysisView {
     player: super::player::Player,
 }
 
-impl Default for AnalyseView {
+impl Default for AnalysisView {
     fn default() -> Self {
         Self {
             player: super::player::Player::new(),
@@ -20,7 +20,7 @@ impl Default for AnalyseView {
     }
 }
 
-impl epi::App for AnalyseView {
+impl epi::App for AnalysisView {
     fn name(&self) -> &str {
         "analysis view"
     }
@@ -29,18 +29,12 @@ impl epi::App for AnalyseView {
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::CtxRef, frame: &mut epi::Frame<'_>) {
         // let Self { label, value } = self;
-
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
-
         self.player.update();
-
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
-                egui::menu::menu(ui, "File", |ui| {
+                egui::menu::menu(ui, "kopek", |ui| {
+                    if ui.button("Open File").clicked() {}
                     if ui.button("Quit").clicked() {
                         frame.quit();
                     }
@@ -79,6 +73,9 @@ impl epi::App for AnalyseView {
         });
 
         ctx.request_repaint(); // Make UI continuous
+
+        // A little sleep to fix the flickering of the lines
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }
 
@@ -94,9 +91,9 @@ fn line_from_points(points: &Vec<Point2>, color: Color32) -> Line {
     line
 }
 
-impl AnalyseView {
+impl AnalysisView {
     #[deprecated]
-    fn sin(&self) -> Line {
+    fn _sin(&self) -> Line {
         Line::new(Values::from_explicit_callback(
             move |x| 0.5 * (2.0 * x).sin() * 1.0,
             ..,
