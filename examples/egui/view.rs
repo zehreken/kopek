@@ -34,17 +34,23 @@ impl epi::App for AnalysisView {
             // The top panel is often a good place for a menu bar:
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "kopek", |ui| {
-                    if ui.button("Open File").clicked() {}
                     if ui.button("Quit").clicked() {
                         frame.quit();
+                    }
+                });
+
+                egui::menu::menu(ui, "Files", |ui| {
+                    for (i, path) in super::player::PATHS.iter().enumerate() {
+                        if ui.button(path).clicked() {
+                            self.player.load_track(path);
+                        }
                     }
                 });
 
                 ui.separator();
 
                 if ui.button("Play").clicked() {
-                    self.player
-                        .play(super::player::PATHS[super::player::PATHS.len() - 1]);
+                    self.player.play();
                 }
                 if ui.button("Pause").clicked() {
                     // pause player
@@ -60,12 +66,12 @@ impl epi::App for AnalysisView {
             ui.heading("Frequency domain analysis");
 
             let waveform_line = line_from_points(
-                &self.player.waveform_graph_points,
+                &self.player.get_waveform_graph_points(),
                 Color32::from_rgb(200, 100, 100),
             );
 
             let frequency_line = line_from_points(
-                &self.player.frequency_graph_points,
+                &self.player.get_frequency_graph_points(),
                 Color32::from_rgb(100, 200, 100),
             );
             ui.add(Plot::new("graph").line(frequency_line).line(waveform_line));

@@ -1,69 +1,37 @@
+use super::utils;
+use super::utils::*;
 use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Device, Host, StreamConfig,
 };
-
-use super::utils;
-use super::utils::*;
 use std::sync::mpsc::{Receiver, Sender};
 
-pub const PATHS: [&str; 1] = [
-    // "sine_100.ogg",
-    // "sine_200.ogg",
-    // "sine_440.ogg",
-    // "sine_500.ogg",
-    // "sine_1000.ogg",
-    // "sine_10000.ogg",
-    // "sine_440hz_stereo.ogg",
-    // "stress_free.wav",
-    // "overture.wav",
+pub const PATHS: [&str; 11] = [
+    "sine_100.ogg",
+    "sine_200.ogg",
+    "sine_440.ogg",
+    "sine_500.ogg",
+    "sine_1000.ogg",
+    "sine_10000.ogg",
+    "sine_440hz_stereo.ogg",
+    "stress_free.wav",
+    "overture.wav",
     "100_200_400_1000_10000.wav",
-    // "sample.wav",
+    "sample.wav",
 ];
 
 pub struct Player {
     audio_host: Host,
     sender: Sender<Vec<[f32; 2]>>,
     receiver: Receiver<Vec<[f32; 2]>>,
-    pub waveform_graph_points: Vec<Point2>,
-    pub frequency_graph_points: Vec<Point2>,
-    // pub scale_points: Vec<Point2>,
+    waveform_graph_points: Vec<Point2>,
+    frequency_graph_points: Vec<Point2>,
+    track: Vec<f32>,
 }
 
 impl Player {
     pub fn new() -> Self {
-        /* This part is not really necessary
-        let sample_size = 1024;
-        let start = 0;
-        let end = start + sample_size;
-        let mut frames_sum: Vec<[i16; 2]> = vec![[0, 0]; sample_size]; // Not used currently
-        for path in PATHS.iter() {
-            let frames = &kopek::decoder::decode(path)[start..end];
-            for (i, frame) in frames.iter().enumerate() {
-                frames_sum[i][0] += frame[0] / PATHS.len() as i16; // First divide by the number of waves and then sum because i16 overflows easily
-                frames_sum[i][1] += frame[1] / PATHS.len() as i16;
-            }
-        }
-        */
-
         let host = cpal::default_host();
-        for device in host.devices().unwrap() {
-            println!("Device: {:?}", device.name());
-            if let Ok(input_config) = device.default_input_config() {
-                println!("Input buffer size: {:?}", input_config.buffer_size());
-                println!("Input channel count: {:?}", input_config.channels());
-            } else {
-                println!("No input config for this device");
-            }
-
-            if let Ok(output_config) = device.default_output_config() {
-                println!("Output buffer size: {:?}", output_config.buffer_size());
-                println!("Output channel count: {:?}", output_config.channels());
-            } else {
-                println!("No output config for this device");
-            }
-            println!("\n");
-        }
 
         let (sender, receiver) = std::sync::mpsc::channel::<Vec<[f32; 2]>>();
 
@@ -73,7 +41,7 @@ impl Player {
             receiver,
             waveform_graph_points: vec![],
             frequency_graph_points: vec![],
-            // scale_points: vec![],
+            track: Player::load_track_at_path(PATHS[0]), // output_stream: create_output_stream(),
         }
     }
 
@@ -103,21 +71,37 @@ impl Player {
         }
     }
 
-    pub fn play<P>(&self, path: P)
+    pub fn load_track<P>(&mut self, path: P)
+    where
+        P: AsRef<std::path::Path>,
+    {
+        self.track = Player::load_track_at_path(path);
+    }
+
+    fn load_track_at_path<P>(path: P) -> Vec<f32>
     where
         P: AsRef<std::path::Path>,
     {
         let frames = kopek::decoder::decode(path);
-
-        let factor = 0.00002;
+        let volume_factor = 0.00002;
         let frames: Vec<f32> = frames
             .iter()
-            .map(|frame| [factor * frame[0] as f32, factor * frame[1] as f32])
+            .map(|frame| {
+                [
+                    volume_factor * frame[0] as f32,
+                    volume_factor * frame[1] as f32,
+                ]
+            })
             .flatten()
             .collect();
 
         println!("frames: {}", frames.len());
+        println!("duration: {}", frames.len() as u64 / (44100 * 2));
 
+        frames
+    }
+
+    pub fn play(&self) {
         let output_device = self
             .audio_host
             .default_output_device()
@@ -128,14 +112,24 @@ impl Player {
             output_config.channels, output_config.sample_rate,
         );
 
-        let s = self.sender.clone();
+        let sender = self.sender.clone();
+        let track = self.track.clone();
         std::thread::spawn(move || {
-            let duration_in_seconds: u64 = frames.len() as u64 / (44100 * 2);
-            println!("duration: {}", duration_in_seconds);
-            let output_stream = create_output_stream(&output_device, &output_config, frames, s);
+            let duration_in_seconds: u64 = track.len() as u64 / (44100 * 2);
+            let output_stream = create_output_stream(&output_device, &output_config, track, sender);
             output_stream.play().expect("Error while playing");
-            std::thread::sleep(std::time::Duration::from_millis(duration_in_seconds * 1000));
+            std::thread::sleep(std::time::Duration::from_millis(
+                duration_in_seconds * 1000 - 100,
+            ));
         });
+    }
+
+    pub fn get_waveform_graph_points(&self) -> &Vec<Point2> {
+        &self.waveform_graph_points
+    }
+
+    pub fn get_frequency_graph_points(&self) -> &Vec<Point2> {
+        &self.frequency_graph_points
     }
 }
 
