@@ -3,6 +3,7 @@ name = "kopek"
 version = "0.1.0"
 authors = ["zehreken <zehreken@gmail.com>"]
 edition = "2018"
+resolver= "2"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,7 +14,7 @@ pprof = { version = "0.5.0", features = ["flamegraph"] }
 
 [dev-dependencies]
 criterion = "0.3"
-bevy = "0.5.0"
+bevy = "0.6.0"
 cpal = "0.13.1"
 anyhow = "1.0.35"
 audrey = "0.3.0"
