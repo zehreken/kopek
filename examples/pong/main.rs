@@ -22,15 +22,25 @@ fn main() {
             })
             .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
             .insert_resource(TargetPosition { factor: 0.0 })
+            .insert_resource(SpectrumData { averages: vec![] })
             .add_startup_system(setup.system())
             .add_system(local_resource_controller.exclusive_system())
             .add_system(paddle_movement_system.system())
+            .add_system(spectrum_bar_system.system())
             .add_system(ball_collision_system.system())
             .add_system(ball_movement_system.system())
             .add_system(scoreboard_system.system())
             .add_system(bevy::input::system::exit_on_esc_system.system())
             .run();
     }
+}
+
+struct SpectrumBar {
+    id: u8,
+}
+
+struct SpectrumData {
+    averages: Vec<f32>,
 }
 
 enum Player {
@@ -74,6 +84,21 @@ fn setup(
     // cameras
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
+    // spectrum bars
+    for i in 0..8 {
+        commands
+            .spawn_bundle(SpriteBundle {
+                material: materials.add(Color::rgb(0.0, 1.0, 0.21).into()),
+                transform: Transform::from_translation(Vec3::new(
+                    -450.0,
+                    -210.0 + 60.0 * i as f32,
+                    0.0,
+                )),
+                sprite: Sprite::new(Vec2::new(30.0, 30.0)),
+                ..Default::default()
+            })
+            .insert(SpectrumBar { id: i as u8 });
+    }
     // paddle one
     commands
         .spawn_bundle(SpriteBundle {
@@ -178,21 +203,6 @@ fn setup(
 }
 
 fn local_resource_controller(world: &mut World) {
-    // let consumer = &mut resources
-    //     .get_thread_local_mut::<Game>()
-    //     .unwrap()
-    //     .audio_model
-    //     .consumer;
-    // println!("{}", consumer.remaining());
-    // for _ in 0..consumer.remaining() {
-    //     let sample = match consumer.pop() {
-    //         Some(s) => s,
-    //         None => 0.0,
-    //     };
-
-    //     println!("sample: {}", sample);
-    // }
-
     let mut samples = vec![];
     for _ in 0..1024 {
         let sample = match world
@@ -207,8 +217,6 @@ fn local_resource_controller(world: &mut World) {
         };
 
         samples.push(sample);
-
-        // println!("sample: {}", sample);
     }
 
     let fft_input: Vec<_> = samples
@@ -219,26 +227,29 @@ fn local_resource_controller(world: &mut World) {
     let frequency_domain = utils::get_frequency_domain_graph(&fft_output, 1.0);
     let average_bins = utils::get_narrow_bar_spectrum_low(&frequency_domain);
 
-    // average_bins
-    //     .iter()
-    //     .for_each(|f| println!("{}", (100.0 + f.y)));
-    world.get_resource_mut::<TargetPosition>().unwrap().factor = 0.5;
+    let mut max = 0.0;
+    let mut index = 0;
     for (i, bin) in average_bins.iter().enumerate() {
-        println!("i {}, bin {}", i, bin.y);
-        if 100.0 + bin.y > 0.5 {
-            world.get_resource_mut::<TargetPosition>().unwrap().factor = i as f32;
-            // break;
+        if *bin > max {
+            max = *bin;
+            index = i;
         }
     }
-    // println!(
-    //     "remaining: {}",
-    //     resources
-    //         .get_thread_local_mut::<Game>()
-    //         .unwrap()
-    //         .audio_model
-    //         .consumer
-    //         .remaining()
-    // );
+    world.get_resource_mut::<TargetPosition>().unwrap().factor = -1.0 + index as f32 * 0.5;
+    world.get_resource_mut::<SpectrumData>().unwrap().averages = average_bins;
+}
+
+fn spectrum_bar_system(
+    spectrum_data: Res<SpectrumData>,
+    mut query: Query<(&SpectrumBar, &mut Transform)>,
+) {
+    if spectrum_data.averages.len() == 8 {
+        let mut i = 0;
+        for (bar, mut transform) in query.iter_mut() {
+            transform.scale.x = spectrum_data.averages[i] / 100.0;
+            i += 1;
+        }
+    }
 }
 
 fn paddle_movement_system(
@@ -250,7 +261,7 @@ fn paddle_movement_system(
     for (paddle, player, mut transform) in query.iter_mut() {
         if let Player::You = *player {
             let mut direction = 0.0;
-            let factor = target_position.factor - 0.5;
+            let factor = target_position.factor;
             if keyboard_input.pressed(KeyCode::A) {
                 direction += 0.25;
             }
