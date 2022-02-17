@@ -43,6 +43,7 @@ struct SpectrumData {
     averages: Vec<f32>,
 }
 
+#[derive(Debug)]
 enum Player {
     You,
     Ai,
@@ -88,7 +89,7 @@ fn setup(
     for i in 0..8 {
         commands
             .spawn_bundle(SpriteBundle {
-                material: materials.add(Color::rgb(0.0, 1.0, 0.21).into()),
+                material: materials.add(Color::rgb(0.0, 0.5, 0.21).into()),
                 transform: Transform::from_translation(Vec3::new(
                     -450.0,
                     -210.0 + 60.0 * i as f32,
@@ -245,7 +246,7 @@ fn spectrum_bar_system(
 ) {
     if spectrum_data.averages.len() == 8 {
         let mut i = 0;
-        for (bar, mut transform) in query.iter_mut() {
+        for (_, mut transform) in query.iter_mut() {
             transform.scale.x = spectrum_data.averages[i] / 100.0;
             i += 1;
         }
@@ -256,9 +257,16 @@ fn paddle_movement_system(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     target_position: Res<TargetPosition>,
-    mut query: Query<(&Paddle, &Player, &mut Transform)>,
+    mut query: QuerySet<(
+        Query<(&Paddle, &Player, &mut Transform)>,
+        Query<(&Ball, &Transform)>,
+    )>,
 ) {
-    for (paddle, player, mut transform) in query.iter_mut() {
+    let mut ball_y = 0.0;
+    for (ball, transform) in query.q1_mut().iter_mut() {
+        ball_y = transform.translation.y;
+    }
+    for (paddle, player, mut transform) in query.q0_mut().iter_mut() {
         if let Player::You = *player {
             let mut direction = 0.0;
             let factor = target_position.factor;
@@ -290,6 +298,7 @@ fn paddle_movement_system(
                 direction -= 1.0;
             }
 
+            direction = (ball_y - transform.translation.y) / 200.0;
             let translation = &mut transform.translation;
             translation.y += time.delta_seconds() * direction * paddle.speed;
             translation.y = translation.y.min(220.0).max(-220.0);
