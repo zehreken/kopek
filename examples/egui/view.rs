@@ -80,7 +80,7 @@ impl epi::App for AnalysisView {
 
         ctx.request_repaint(); // Make UI continuous
 
-        // A little sleep to fix the flickering of the lines
+        // A little sleep to fix curve flickering
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }
@@ -88,7 +88,9 @@ impl epi::App for AnalysisView {
 fn line_from_points(points: &Vec<Point2>, color: Color32) -> Line {
     let mut ys: [f32; 1024] = [0.0; 1024];
     for (i, p) in points.iter().enumerate() {
-        ys[i] = p.y;
+        if i < 512 {
+            ys[i] = p.y;
+        }
     }
 
     let values = Values::from_ys_f32(&ys);
