@@ -50,7 +50,8 @@ impl epi::App for AnalysisView {
                 ui.separator();
 
                 if ui.button("Play").clicked() {
-                    self.player.play();
+                    // self.player.play();
+                    self.player.record();
                 }
                 if ui.button("Pause").clicked() {
                     // pause player
@@ -88,9 +89,7 @@ impl epi::App for AnalysisView {
 fn line_from_points(points: &Vec<Point2>, color: Color32) -> Line {
     let mut ys: [f32; 1024] = [0.0; 1024];
     for (i, p) in points.iter().enumerate() {
-        if i < 512 {
-            ys[i] = p.y;
-        }
+        ys[i] = p.y;
     }
 
     let values = Values::from_ys_f32(&ys);

@@ -101,6 +101,25 @@ impl Player {
         frames
     }
 
+    pub fn record(&self) {
+        let input_device = self
+            .audio_host
+            .default_input_device()
+            .expect("Input device not found");
+        let input_config: StreamConfig = input_device.default_input_config().unwrap().into();
+        println!(
+            "{:?}, {:?}",
+            input_config.channels, input_config.sample_rate
+        );
+
+        let sender = self.sender.clone();
+        std::thread::spawn(move || {
+            let input_stream = create_input_stream(&input_device, &input_config, sender);
+            input_stream.play().expect("Error while playing");
+            std::thread::sleep(std::time::Duration::from_secs_f32(10.0));
+        });
+    }
+
     pub fn play(&self) {
         let output_device = self
             .audio_host
@@ -130,6 +149,28 @@ impl Player {
     pub fn get_frequency_graph_points(&self) -> &Vec<Point2> {
         &self.frequency_graph_points
     }
+}
+
+fn create_input_stream(
+    input_device: &Device,
+    config: &StreamConfig,
+    sender: Sender<Vec<[f32; 2]>>,
+) -> cpal::Stream {
+    let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
+        let mut frames: Vec<[f32; 2]> = vec![];
+        for &sample in data {
+            frames.push([sample; 2]);
+        }
+
+        match sender.send(frames) {
+            Ok(_) => (),
+            Err(err) => eprintln!("Error: {}", err),
+        }
+    };
+
+    input_device
+        .build_input_stream(config, input_data_fn, err_fn)
+        .unwrap()
 }
 
 fn create_output_stream(
