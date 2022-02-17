@@ -114,13 +114,12 @@ impl Player {
 
         let sender = self.sender.clone();
         let track = self.track.clone();
+
+        let duration_in_seconds: f32 = track.len() as f32 / (44100.0 * 2.0);
         std::thread::spawn(move || {
-            let duration_in_seconds: u64 = track.len() as u64 / (44100 * 2);
             let output_stream = create_output_stream(&output_device, &output_config, track, sender);
             output_stream.play().expect("Error while playing");
-            std::thread::sleep(std::time::Duration::from_millis(
-                duration_in_seconds * 1000 - 100,
-            ));
+            std::thread::sleep(std::time::Duration::from_secs_f32(duration_in_seconds));
         });
     }
 
@@ -143,7 +142,9 @@ fn create_output_stream(
     let output_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
         let mut frames: Vec<[f32; 2]> = vec![];
         for sample in data {
-            *sample = track[index];
+            if index < track.len() {
+                *sample = track[index];
+            } // sample can be set to 0.0 but the noise sounds cooler
             frames.push([*sample; 2]);
             index += 1;
         }
