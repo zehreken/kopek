@@ -31,12 +31,12 @@ pub struct Player {
 
 impl Player {
     pub fn new() -> Self {
-        let host = cpal::default_host();
+        let audio_host = cpal::default_host();
 
         let (sender, receiver) = std::sync::mpsc::channel::<Vec<[f32; 2]>>();
 
         Player {
-            audio_host: host,
+            audio_host,
             sender,
             receiver,
             waveform_graph_points: vec![],
@@ -108,7 +108,7 @@ impl Player {
             .expect("Input device not found");
         let input_config: StreamConfig = input_device.default_input_config().unwrap().into();
         println!(
-            "{:?}, {:?}",
+            "channels: {:?}, sample rate: {:?}",
             input_config.channels, input_config.sample_rate
         );
 
@@ -127,7 +127,7 @@ impl Player {
             .expect("Output device not found");
         let output_config: StreamConfig = output_device.default_output_config().unwrap().into();
         println!(
-            "{:?}, {:?}",
+            "channels: {:?}, sample rate: {:?}",
             output_config.channels, output_config.sample_rate,
         );
 
