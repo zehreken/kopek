@@ -180,14 +180,17 @@ fn create_output_stream(
     sender: Sender<Vec<[f32; 2]>>,
 ) -> cpal::Stream {
     let mut index = 0;
+    let channel_count: usize = config.channels as usize;
     let output_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
         let mut frames: Vec<[f32; 2]> = vec![];
-        for sample in data {
+        for frame in data.chunks_mut(channel_count) {
             if index < track.len() {
-                *sample = track[index];
+                frames.push([track[index]; 2]);
+                for sample in frame.iter_mut().take(2) {
+                    *sample = track[index];
+                    index += 1;
+                }
             } // sample can be set to 0.0 but the noise sounds cooler
-            frames.push([*sample; 2]);
-            index += 1;
         }
 
         match sender.send(frames) {

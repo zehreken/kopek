@@ -47,7 +47,7 @@ impl Model {
 
         // The buffer to share samples
         let ring = RingBuffer::new(latency_samples * 2);
-        let (mut producer, mut consumer) = ring.split();
+        let (mut producer, consumer) = ring.split();
 
         // Fill the samples with 0.0 equal to the length of the delay.
         for _ in 0..latency_samples {
