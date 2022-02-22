@@ -16,11 +16,10 @@ use cpal::{
 };
 use ringbuf::{Consumer, RingBuffer};
 
-const LATENCY_MS: f32 = 150.0;
+const LATENCY_MS: f32 = 10.0;
 
 pub struct Model {
     pub input_stream: Stream,
-    // pub output_stream: Stream,
     pub consumer: Consumer<f32>,
 }
 
@@ -56,11 +55,17 @@ impl Model {
             producer.push(0.0).unwrap();
         }
 
+        let channel_count = config.channels as usize;
         let input_data_fn = move |data: &[f32], _: &cpal::InputCallbackInfo| {
-            let mut output_fell_behind = false;
-            for &sample in data {
-                if producer.push(sample).is_err() {
-                    output_fell_behind = true;
+            // let mut output_fell_behind = false;
+            for frame in data.chunks(channel_count) {
+                let mut average = 0.0;
+                for sample in frame.iter().take(2) {
+                    average += sample;
+                }
+                average = average / frame.len() as f32;
+                if producer.push(average).is_err() {
+                    // output_fell_behind = true;
                 }
             }
             // if output_fell_behind {
@@ -68,29 +73,12 @@ impl Model {
             // }
         };
 
-        // let output_data_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-        //     let mut input_fell_behind = false;
-        //     for sample in data {
-        //         *sample = match consumer.pop() {
-        //             Some(s) => s,
-        //             None => {
-        //                 input_fell_behind = true;
-        //                 0.0
-        //             }
-        //         };
-        //     }
-        //     if input_fell_behind {
-        //         eprintln!("input stream fell behind: try increasing latency");
-        //     }
-        // };
-
         // Build streams.
         println!(
             "Attempting to build both streams with f32 samples and `{:?}`.",
             config
         );
         let input_stream = input_device.build_input_stream(&config, input_data_fn, err_fn)?;
-        // let output_stream = output_device.build_output_stream(&config, output_data_fn, err_fn)?;
         println!("Successfully built streams.");
 
         // Play the streams.
@@ -103,7 +91,6 @@ impl Model {
 
         Ok(Model {
             input_stream,
-            // output_stream,
             consumer,
         })
     }

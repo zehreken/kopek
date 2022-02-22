@@ -236,7 +236,12 @@ fn local_resource_controller(world: &mut World) {
             index = i;
         }
     }
-    world.get_resource_mut::<TargetPosition>().unwrap().factor = -1.0 + index as f32 * 0.5;
+
+    world.get_resource_mut::<TargetPosition>().unwrap().factor = if max > 50.0 {
+        -1.0 + index as f32 * 0.5
+    } else {
+        0.0
+    };
     world.get_resource_mut::<SpectrumData>().unwrap().averages = average_bins;
 }
 
@@ -263,7 +268,7 @@ fn paddle_movement_system(
     )>,
 ) {
     let mut ball_y = 0.0;
-    for (ball, transform) in query.q1_mut().iter_mut() {
+    for (_, transform) in query.q1_mut().iter_mut() {
         ball_y = transform.translation.y;
     }
     for (paddle, player, mut transform) in query.q0_mut().iter_mut() {
