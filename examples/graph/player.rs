@@ -116,7 +116,7 @@ impl Player {
         std::thread::spawn(move || {
             let input_stream = create_input_stream(&input_device, &input_config, sender);
             input_stream.play().expect("Error while playing");
-            std::thread::sleep(std::time::Duration::from_secs_f32(10.0));
+            std::thread::sleep(std::time::Duration::from_secs_f32(100.0));
         });
     }
 
