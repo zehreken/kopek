@@ -72,13 +72,10 @@ impl eframe::App for AnalysisView {
                 Color32::from_rgb(100, 200, 100),
             );
 
-            Plot::new("frequency")
-                .view_aspect(2.0)
-                .show(ui, |plot_ui| plot_ui.line(frequency_line));
-
-            Plot::new("waveform")
-                .view_aspect(2.0)
-                .show(ui, |plot_ui| plot_ui.line(waveform_line));
+            Plot::new("waveform").show(ui, |plot_ui| {
+                plot_ui.line(frequency_line);
+                plot_ui.line(waveform_line)
+            });
 
             egui::warn_if_debug_build(ui);
         });
