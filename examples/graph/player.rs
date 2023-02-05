@@ -169,7 +169,7 @@ fn create_input_stream(
     };
 
     input_device
-        .build_input_stream(config, input_data_fn, err_fn)
+        .build_input_stream(config, input_data_fn, err_fn, None)
         .unwrap()
 }
 
@@ -200,7 +200,7 @@ fn create_output_stream(
     };
 
     output_device
-        .build_output_stream(config, output_fn, err_fn)
+        .build_output_stream(config, output_fn, err_fn, None)
         .unwrap()
 }
 
