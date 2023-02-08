@@ -1,6 +1,5 @@
 use bevy::{
     prelude::*,
-    render::pass::ClearColor,
     sprite::collide_aabb::{collide, Collision},
 };
 mod utils;
@@ -12,9 +11,8 @@ fn main() {
     if let Ok(am) = audio_model {
         // am.output_stream.pause();
         let game = Game { audio_model: am };
-        App::build()
+        App::new()
             .add_plugins(DefaultPlugins)
-            // .add_thread_local_resource(game)
             .insert_non_send_resource(game)
             .insert_resource(Scoreboard {
                 player_you: 0,
@@ -23,89 +21,48 @@ fn main() {
             .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
             .insert_resource(TargetPosition { factor: 0.0 })
             .insert_resource(SpectrumData { averages: vec![] })
-            .add_startup_system(setup.system())
-            .add_system(local_resource_controller.exclusive_system())
-            .add_system(paddle_movement_system.system())
-            .add_system(spectrum_bar_system.system())
-            .add_system(ball_collision_system.system())
-            .add_system(ball_movement_system.system())
-            .add_system(scoreboard_system.system())
-            .add_system(bevy::input::system::exit_on_esc_system.system())
+            .add_startup_system(setup)
+            .add_system(local_resource_controller)
+            .add_system(paddle_movement_system)
+            .add_system(spectrum_bar_system)
+            .add_system(ball_collision_system)
+            .add_system(ball_movement_system)
+            .add_system(scoreboard_system)
+            // .add_system(bevy::input::system::exit_on_esc_system.system())
             .run();
     }
 }
 
-struct SpectrumBar {
-    id: u8,
-}
-
-struct SpectrumData {
-    averages: Vec<f32>,
-}
-
-#[derive(Debug)]
-enum Player {
-    You,
-    Ai,
-}
-
-struct Game {
-    audio_model: audio::Model,
-}
-
-struct TargetPosition {
-    factor: f32,
-}
-
-struct Paddle {
-    speed: f32,
-}
-
-struct Ball {
-    velocity: Vec3,
-}
-
-struct Scoreboard {
-    player_you: u8,
-    player_ai: u8,
-}
-
-enum Collider {
-    Solid,
-    ScorableYou,
-    ScorableAi,
-    Paddle,
-}
-
-fn setup(
-    mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // cameras
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn(Camera2dBundle::default());
     // spectrum bars
     for i in 0..8 {
         commands
-            .spawn_bundle(SpriteBundle {
-                material: materials.add(Color::rgb(0.0, 0.5, 0.21).into()),
+            .spawn(SpriteBundle {
                 transform: Transform::from_translation(Vec3::new(
                     -450.0,
                     -210.0 + 60.0 * i as f32,
                     0.0,
                 )),
-                sprite: Sprite::new(Vec2::new(30.0, 30.0)),
-                ..Default::default()
+                sprite: Sprite {
+                    color: Color::rgb(0.0, 0.5, 0.21),
+                    custom_size: Some(Vec2::new(30.0, 30.0)),
+                    ..default()
+                },
+                ..default()
             })
             .insert(SpectrumBar { id: i as u8 });
     }
     // paddle one
     commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(-400.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(30.0, 120.0)),
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.21),
+                custom_size: Some(Vec2::new(30.0, 120.0)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Player::You)
@@ -113,10 +70,13 @@ fn setup(
         .insert(Collider::Paddle);
     // paddle two
     commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(400.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(30.0, 120.0)),
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.21),
+                custom_size: Some(Vec2::new(30.0, 120.0)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Player::Ai)
@@ -124,49 +84,54 @@ fn setup(
         .insert(Collider::Paddle);
     // ball
     commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.add(Color::rgb(1.0, 0.0, 0.21).into()),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(0.0, -50.0, 1.0)),
-            sprite: Sprite::new(Vec2::new(30.0, 30.0)),
+            sprite: Sprite {
+                color: Color::rgb(1.0, 0.0, 0.21),
+                custom_size: Some(Vec2::new(30.0, 30.0)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Ball {
             velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
         });
     // scoreboard
-    commands.spawn_bundle(TextBundle {
-        text: Text::with_section(
-            "",
+    commands.spawn(
+        // Create a TextBundle that has a Text with a single section.
+        TextBundle::from_section(
+            // Accepts a `String` or any type that converts into a `String`, such as `&str`
+            "test",
             TextStyle {
                 font: asset_server.load("fonts/emulogic.ttf"),
-                color: Color::rgb(0.5, 0.5, 1.0),
                 font_size: 40.0,
+                color: Color::rgb(0.5, 0.5, 1.0),
             },
-            Default::default(),
-        ),
-        style: Style {
+        ) // Set the alignment of the Text
+        .with_text_alignment(TextAlignment::TOP_CENTER)
+        // Set the style of the TextBundle itself.
+        .with_style(Style {
             position_type: PositionType::Absolute,
-            position: Rect {
+            position: UiRect {
                 top: Val::Px(5.0),
-                left: Val::Px(5.0),
-                ..Default::default()
+                ..default()
             },
-            ..Default::default()
-        },
-        ..Default::default()
-    });
+            ..default()
+        }),
+    );
 
     // wals
-    let wall_material = materials.add(Color::rgb(0.8, 0.8, 0.8).into());
     let wall_thickness = 10.0;
     let bounds = Vec2::new(900.0, 600.0);
 
     commands
         // left
-        .spawn_bundle(SpriteBundle {
-            material: wall_material.clone(),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(-bounds.x / 2.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Collider::Solid)
@@ -174,10 +139,12 @@ fn setup(
         .insert(Player::You);
     // right
     commands
-        .spawn_bundle(SpriteBundle {
-            material: wall_material.clone(),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(bounds.x / 2.0, 0.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(wall_thickness, bounds.y + wall_thickness)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Collider::Solid)
@@ -185,19 +152,23 @@ fn setup(
         .insert(Player::Ai);
     // bottom
     commands
-        .spawn_bundle(SpriteBundle {
-            material: wall_material.clone(),
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(0.0, -bounds.y / 2.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Collider::Solid);
     // top
     commands
-        .spawn_bundle(SpriteBundle {
-            material: wall_material,
+        .spawn(SpriteBundle {
             transform: Transform::from_translation(Vec3::new(0.0, bounds.y / 2.0, 0.0)),
-            sprite: Sprite::new(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+            sprite: Sprite {
+                custom_size: Some(Vec2::new(bounds.x + wall_thickness, wall_thickness)),
+                ..default()
+            },
             ..Default::default()
         })
         .insert(Collider::Solid);
@@ -262,16 +233,18 @@ fn paddle_movement_system(
     time: Res<Time>,
     keyboard_input: Res<Input<KeyCode>>,
     target_position: Res<TargetPosition>,
-    mut query: QuerySet<(
+    mut query: ParamSet<(
         Query<(&Paddle, &Player, &mut Transform)>,
         Query<(&Ball, &Transform)>,
     )>,
+    // mut paddle_query: Query<(&Paddle, &Player, &mut Transform)>,
+    // ball_query: Query<(&Ball, &Transform)>,
 ) {
     let mut ball_y = 0.0;
-    for (_, transform) in query.q1_mut().iter_mut() {
+    for (_, transform) in query.p1().iter() {
         ball_y = transform.translation.y;
     }
-    for (paddle, player, mut transform) in query.q0_mut().iter_mut() {
+    for (paddle, player, mut transform) in query.p0().iter_mut() {
         if let Player::You = *player {
             let mut direction = 0.0;
             let factor = target_position.factor;
@@ -321,7 +294,7 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
 }
 
 fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
-    let mut text = query.single_mut().unwrap();
+    let mut text = query.single_mut();
     text.sections[0].value = format!(
         "YOU:{}                       {}:AI",
         scoreboard.player_you, scoreboard.player_ai
@@ -335,7 +308,7 @@ fn ball_collision_system(
     collider_query: Query<(Entity, &Collider, &Transform, &Sprite)>,
 ) {
     for (mut ball, ball_transform, sprite) in ball_query.iter_mut() {
-        let ball_size = sprite.size;
+        let ball_size = sprite.custom_size.unwrap();
         let velocity = &mut ball.velocity;
 
         // check collision with walls
@@ -344,7 +317,7 @@ fn ball_collision_system(
                 ball_transform.translation,
                 ball_size,
                 transform.translation,
-                sprite.size,
+                sprite.custom_size.unwrap(),
             );
             if let Some(collision) = collision {
                 // scorable colliders should be despawned and increment the scoreboard on collision
@@ -364,6 +337,7 @@ fn ball_collision_system(
                     Collision::Right => reflect_x = velocity.x < 0.0,
                     Collision::Top => reflect_y = velocity.y < 0.0,
                     Collision::Bottom => reflect_y = velocity.y > 0.0,
+                    Collision::Inside => (),
                 }
 
                 // reflect velocity on the x-axis if we hit something on the x-axis
@@ -383,4 +357,53 @@ fn ball_collision_system(
             }
         }
     }
+}
+
+#[derive(Component)]
+struct SpectrumBar {
+    id: u8,
+}
+
+#[derive(Resource)]
+struct SpectrumData {
+    averages: Vec<f32>,
+}
+
+#[derive(Component, Debug)]
+enum Player {
+    You,
+    Ai,
+}
+
+struct Game {
+    audio_model: audio::Model,
+}
+
+#[derive(Resource)]
+struct TargetPosition {
+    factor: f32,
+}
+
+#[derive(Component)]
+struct Paddle {
+    speed: f32,
+}
+
+#[derive(Component)]
+struct Ball {
+    velocity: Vec3,
+}
+
+#[derive(Resource)]
+struct Scoreboard {
+    player_you: u8,
+    player_ai: u8,
+}
+
+#[derive(Component)]
+enum Collider {
+    Solid,
+    ScorableYou,
+    ScorableAi,
+    Paddle,
 }

@@ -14,13 +14,13 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Stream,
 };
-use ringbuf::{Consumer, RingBuffer};
+use ringbuf::{HeapConsumer, HeapRb};
 
 const LATENCY_MS: f32 = 10.0;
 
 pub struct Model {
     pub input_stream: Stream,
-    pub consumer: Consumer<f32>,
+    pub consumer: HeapConsumer<f32>,
 }
 
 impl Model {
@@ -45,7 +45,7 @@ impl Model {
         let latency_samples = latency_frames as usize * config.channels as usize;
 
         // The buffer to share samples
-        let ring = RingBuffer::new(latency_samples * 2);
+        let ring = HeapRb::new(latency_samples * 2);
         let (mut producer, consumer) = ring.split();
 
         // Fill the samples with 0.0 equal to the length of the delay.
@@ -78,7 +78,7 @@ impl Model {
             "Attempting to build both streams with f32 samples and `{:?}`.",
             config
         );
-        let input_stream = input_device.build_input_stream(&config, input_data_fn, err_fn)?;
+        let input_stream = input_device.build_input_stream(&config, input_data_fn, err_fn, None)?;
         println!("Successfully built streams.");
 
         // Play the streams.
