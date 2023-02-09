@@ -1,10 +1,9 @@
-pub fn get_sine() {
+pub const A_FREQ: f32 = 440.0;
+pub const C_FREQ: f32 = 523.25;
 
-    let freq: f32 = if first_beat {
-        utils::C_FREQ
-    } else {
-        utils::A_FREQ
-    };
+pub fn get_sine(tick: f32) -> f32 {
+    let freq = A_FREQ;
     let volume = 0.2;
-    t_index as f32 * 2.0 * std::f32::consts::PI * freq / 44100.0).sin();
+
+    (tick * 2.0 * std::f32::consts::PI * freq / 44100.0).sin() * volume
 }
