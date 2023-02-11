@@ -79,10 +79,7 @@ impl Model {
             "Starting the input and output streams with `{}` milliseconds of latency.",
             LATENCY_MS
         );
-        // input_stream.play()?;
         output_stream.play().unwrap();
-
-        std::thread::sleep(std::time::Duration::from_millis(3000));
 
         Ok(Model {
             output_stream,

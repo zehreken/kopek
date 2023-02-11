@@ -1,6 +1,14 @@
 mod audio;
+mod view;
 
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
-    println!("testing wave example");
-    audio::Model::new().unwrap();
+    let view = view::View::default();
+
+    let native_options = eframe::NativeOptions::default();
+    eframe::run_native(
+        "eframe template",
+        native_options,
+        Box::new(|_| Box::new(view)),
+    );
 }
