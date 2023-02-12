@@ -1,5 +1,3 @@
-//! Feeds back the input stream directly into the output stream.
-//!
 //! Assumes that the input and output devices can use the same stream configuration and that they
 //! support the f32 sample format.
 //!
@@ -14,17 +12,16 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
     Stream,
 };
-use ringbuf::{HeapConsumer, HeapRb};
+use ringbuf::HeapConsumer;
 
 const LATENCY_MS: f32 = 10.0;
 
 pub struct Model {
-    pub output_stream: Stream,
-    // pub consumer: HeapConsumer<f32>,
+    output_stream: Stream,
 }
 
 impl Model {
-    pub fn new() -> Result<Model, anyhow::Error> {
+    pub fn new(mut consumer: HeapConsumer<f32>) -> Result<Model, anyhow::Error> {
         let host = cpal::default_host();
 
         // Default devices.
@@ -41,12 +38,12 @@ impl Model {
         let config: cpal::StreamConfig = output_device.default_output_config()?.into();
 
         // Create a delay in case the input and output devices aren't synced.
-        let latency_frames = (LATENCY_MS / 1_000.0) * config.sample_rate.0 as f32;
-        let latency_samples = latency_frames as usize * config.channels as usize;
+        // let latency_frames = (LATENCY_MS / 1_000.0) * config.sample_rate.0 as f32;
+        // let latency_samples = latency_frames as usize * config.channels as usize;
 
         // The buffer to share samples
-        // let ring = HeapRb::new(latency_samples * 2);
-        // let (mut producer, consumer) = ring.split();
+        // let ring = HeapRb::new(4096);
+        // let (producer, mut consumer) = ring.split();
 
         // Fill the samples with 0.0 equal to the length of the delay.
         // for _ in 0..latency_samples {
@@ -56,12 +53,12 @@ impl Model {
         // }
 
         let channel_count = config.channels as usize;
-        let mut tick: f32 = 0.0;
 
         let output_data_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
             for sample in data {
-                *sample = kopek::wave::get_sine(tick);
-                tick += 1.0;
+                if let Some(input) = consumer.pop() {
+                    *sample = input;
+                }
             }
         };
 
@@ -76,15 +73,12 @@ impl Model {
 
         // Play the streams.
         println!(
-            "Starting the input and output streams with `{}` milliseconds of latency.",
+            "Starting the output stream with `{}` milliseconds of latency.",
             LATENCY_MS
         );
-        output_stream.play().unwrap();
+        output_stream.play().expect("Can't play output stream");
 
-        Ok(Model {
-            output_stream,
-            // consumer,
-        })
+        Ok(Model { output_stream })
     }
 }
 
