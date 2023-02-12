@@ -20,6 +20,8 @@ audrey = "0.3.0"
 ringbuf = "0.3.2"
 egui = "0.20.1"
 eframe = "0.20.1"
+rand = "0.8"
+rand_distr = "0.4.3"
 
 [[bench]]
 name = "benchmark"

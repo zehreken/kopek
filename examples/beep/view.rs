@@ -4,6 +4,7 @@ use super::audio::*;
 use eframe::egui;
 use egui::Color32;
 use kopek::wave::*;
+use rand::prelude::*;
 use ringbuf::{HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -12,6 +13,16 @@ use ringbuf::{HeapProducer, HeapRb};
 pub struct View {
     audio_model: Model,
     input_producer: HeapProducer<u8>,
+}
+
+pub fn white_noise(_: f32) -> f32 {
+    let val: f32 = rand::thread_rng().sample(rand_distr::StandardNormal);
+    val
+}
+
+pub fn rand_noise(_: f32) -> f32 {
+    let val: f32 = rand::thread_rng().gen();
+    val
 }
 
 impl Default for View {
@@ -27,7 +38,8 @@ impl Default for View {
             loop {
                 for _ in 0..1024 {
                     if !producer.is_full() {
-                        producer.push(kopek::wave::get_sine(freq, tick)).unwrap();
+                        // producer.push(kopek::wave::sine(freq, tick)).unwrap();
+                        producer.push(white_noise(tick)).unwrap();
                         tick += 1.0;
                     }
                 }
@@ -54,6 +66,7 @@ impl Default for View {
                     if input == 6 {
                         freq = B_FREQ;
                     }
+                    if input == 7 {}
                 }
             }
         });
