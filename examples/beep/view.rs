@@ -1,5 +1,3 @@
-use std::thread::JoinHandle;
-
 use super::audio::*;
 use eframe::egui;
 use egui::Color32;
@@ -13,16 +11,6 @@ use ringbuf::{HeapProducer, HeapRb};
 pub struct View {
     audio_model: Model,
     input_producer: HeapProducer<u8>,
-}
-
-pub fn white_noise(_: f32) -> f32 {
-    let val: f32 = rand::thread_rng().sample(rand_distr::StandardNormal);
-    val
-}
-
-pub fn rand_noise(_: f32) -> f32 {
-    let val: f32 = rand::thread_rng().gen();
-    val
 }
 
 impl Default for View {
@@ -39,7 +27,7 @@ impl Default for View {
                 for _ in 0..1024 {
                     if !producer.is_full() {
                         // producer.push(kopek::wave::sine(freq, tick)).unwrap();
-                        producer.push(white_noise(tick)).unwrap();
+                        producer.push(kopek::wave::white_noise()).unwrap();
                         tick += 1.0;
                     }
                 }
