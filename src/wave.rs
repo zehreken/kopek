@@ -13,6 +13,17 @@ pub fn sine(freq: f32, tick: f32) -> f32 {
     (tick * 2.0 * std::f32::consts::PI * freq / 44100.0).sin() // * volume
 }
 
+pub fn saw(freq: f32, tick: f32) -> f32 {
+    let base = -1.0;
+    let sample_rate = 44100.0;
+    let p = freq / sample_rate;
+    let mut value = base + p * (tick % 200.0);
+    if value >= 1.0 {
+        value -= 2.0;
+    }
+    value
+}
+
 pub fn rand_noise() -> f32 {
     rand::thread_rng().gen()
 }

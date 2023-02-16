@@ -27,7 +27,9 @@ impl Default for View {
                 for _ in 0..1024 {
                     if !producer.is_full() {
                         // producer.push(kopek::wave::sine(freq, tick)).unwrap();
-                        producer.push(kopek::wave::white_noise()).unwrap();
+                        // producer.push(kopek::wave::white_noise()).unwrap();
+                        // println!("value: {}", kopek::wave::saw(freq, tick));
+                        producer.push(kopek::wave::saw(freq, tick)).unwrap();
                         tick += 1.0;
                     }
                 }
