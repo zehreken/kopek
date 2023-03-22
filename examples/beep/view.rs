@@ -1,9 +1,10 @@
+use std::collections::VecDeque;
+
 use super::audio::*;
 use eframe::egui;
-use egui::Color32;
+use egui::plot::{Line, Plot, PlotPoints};
 use kopek::wave::*;
-use rand::prelude::*;
-use ringbuf::{HeapProducer, HeapRb};
+use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -11,6 +12,8 @@ use ringbuf::{HeapProducer, HeapRb};
 pub struct View {
     audio_model: Model,
     input_producer: HeapProducer<u8>,
+    sample: VecDeque<f32>,
+    view_consumer: HeapConsumer<f32>,
 }
 
 impl Default for View {
@@ -19,6 +22,8 @@ impl Default for View {
         let (mut producer, consumer) = ring.split();
         let input_ring = HeapRb::new(16);
         let (input_producer, mut input_consumer) = input_ring.split();
+        let view_ring = HeapRb::new(100000);
+        let (mut view_producer, view_consumer) = view_ring.split();
         let audio_model = Model::new(consumer).unwrap();
         std::thread::spawn(move || {
             let mut tick = 0.0;
@@ -26,14 +31,17 @@ impl Default for View {
             loop {
                 for _ in 0..1024 {
                     if !producer.is_full() {
-                        // producer.push(kopek::wave::sine(freq, tick)).unwrap();
-                        // producer.push(kopek::wave::white_noise()).unwrap();
-                        // println!("value: {}", kopek::wave::saw(freq, tick));
-                        producer.push(kopek::wave::saw(freq, tick)).unwrap();
+                        // let value = kopek::wave::saw(freq, tick);
+                        let value = kopek::wave::sine(60.0, tick);
+                        // let value = kopek::wave::white_noise();
+                        // let value = kopek::wave::rand_noise();
+                        producer.push(value).unwrap();
+                        if !view_producer.is_full() {
+                            view_producer.push(value).unwrap();
+                        }
                         tick += 1.0;
                     }
                 }
-                // std::thread::sleep(std::time::Duration::from_millis(10));
                 if let Some(input) = input_consumer.pop() {
                     if input == 0 {
                         freq = C_FREQ;
@@ -63,13 +71,19 @@ impl Default for View {
         Self {
             audio_model,
             input_producer,
+            sample: VecDeque::from([0.0; 1024]),
+            view_consumer,
         }
     }
 }
 
 impl eframe::App for View {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
+        if let Some(v) = self.view_consumer.pop() {
+            self.sample.pop_front();
+            self.sample.push_back(v);
+        }
+        egui::SidePanel::left("left_panel").show(ctx, |ui| {
             if ui.button("C").clicked() {
                 self.input_producer.push(0).unwrap();
             }
@@ -92,5 +106,19 @@ impl eframe::App for View {
                 self.input_producer.push(6).unwrap();
             }
         });
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.heading("Frequency domain analysis");
+
+            self.sample.make_contiguous();
+            let waveform_line = Line::new(PlotPoints::from_ys_f32(&self.sample.as_slices().0));
+
+            Plot::new("waveform").show(ui, |plot_ui| plot_ui.line(waveform_line));
+
+            egui::warn_if_debug_build(ui);
+        });
+
+        ctx.request_repaint(); // Make UI continuous
+        std::thread::sleep(std::time::Duration::from_millis(10));
     }
 }

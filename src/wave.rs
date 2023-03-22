@@ -25,7 +25,7 @@ pub fn saw(freq: f32, tick: f32) -> f32 {
 }
 
 pub fn rand_noise() -> f32 {
-    rand::thread_rng().gen()
+    rand::thread_rng().gen::<f32>() * 2.0 - 1.0
 }
 
 pub fn white_noise() -> f32 {
