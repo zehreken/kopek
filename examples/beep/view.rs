@@ -11,17 +11,17 @@ use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct View {
     audio_model: Model,
-    input_producer: HeapProducer<u8>,
+    input_producer: HeapProducer<(u8, u8)>, // first is freq, second is octave
     sample: VecDeque<f32>,
     view_consumer: HeapConsumer<f32>,
-    octave: i8,
+    octave: u8,
 }
 
 impl Default for View {
     fn default() -> Self {
         let ring = HeapRb::new(2048);
         let (mut producer, consumer) = ring.split();
-        let input_ring = HeapRb::new(16);
+        let input_ring = HeapRb::<(u8, u8)>::new(16);
         let (input_producer, mut input_consumer) = input_ring.split();
         let view_ring = HeapRb::new(100000);
         let (mut view_producer, view_consumer) = view_ring.split();
@@ -43,30 +43,31 @@ impl Default for View {
                         tick += 1.0;
                     }
                 }
-                if let Some(input) = input_consumer.pop() {
+                if let Some((input, octave)) = input_consumer.pop() {
+                    let octave_factor = 2_u8.pow(octave as u32) as f32;
                     if input == 0 {
-                        freq = C_FREQ;
+                        freq = C_FREQ * octave_factor;
                     }
                     if input == 1 {
-                        freq = D_FREQ;
+                        freq = D_FREQ * octave_factor;
                     }
                     if input == 2 {
-                        freq = E_FREQ;
+                        freq = E_FREQ * octave_factor;
                     }
                     if input == 3 {
-                        freq = F_FREQ;
+                        freq = F_FREQ * octave_factor;
                     }
                     if input == 4 {
-                        freq = G_FREQ;
+                        freq = G_FREQ * octave_factor;
                     }
                     if input == 5 {
-                        freq = A_FREQ;
+                        freq = A_FREQ * octave_factor;
                     }
                     if input == 6 {
-                        freq = B_FREQ;
+                        freq = B_FREQ * octave_factor;
                     }
                     if input == 7 {
-                        freq = C_FREQ * 2.0;
+                        freq = C_FREQ * octave_factor * 2.0;
                     }
                 }
             }
@@ -82,7 +83,7 @@ impl Default for View {
 }
 
 impl eframe::App for View {
-    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // For visualization
         while let Some(v) = self.view_consumer.pop() {
             self.sample.pop_front();
@@ -90,44 +91,44 @@ impl eframe::App for View {
         }
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
             if ui.button("C1").clicked() {
-                self.input_producer.push(0).unwrap();
+                self.input_producer.push((0, self.octave)).unwrap();
             }
             if ui.button("D").clicked() {
-                self.input_producer.push(1).unwrap();
+                self.input_producer.push((1, self.octave)).unwrap();
             }
             if ui.button("E").clicked() {
-                self.input_producer.push(2).unwrap();
+                self.input_producer.push((2, self.octave)).unwrap();
             }
             if ui.button("F").clicked() {
-                self.input_producer.push(3).unwrap();
+                self.input_producer.push((3, self.octave)).unwrap();
             }
             if ui.button("G").clicked() {
-                self.input_producer.push(4).unwrap();
+                self.input_producer.push((4, self.octave)).unwrap();
             }
             if ui.button("A").clicked() {
-                self.input_producer.push(5).unwrap();
+                self.input_producer.push((5, self.octave)).unwrap();
             }
             if ui.button("B").clicked() {
-                self.input_producer.push(6).unwrap();
+                self.input_producer.push((6, self.octave)).unwrap();
             }
             if ui.button("C2").clicked() {
-                self.input_producer.push(7).unwrap();
+                self.input_producer.push((7, self.octave)).unwrap();
             }
             if ui.button("down").clicked() {
                 if self.octave > 1 {
-                    self.octave /= 2;
+                    self.octave -= 1;
                 }
             }
             ui.label(format!("octave: {0}", self.octave));
             if ui.button("up").clicked() {
-                if self.octave < 16 {
-                    self.octave *= 2;
+                if self.octave < 5 {
+                    self.octave += 1;
                 }
             }
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("Frequency domain analysis");
+            ui.heading("Frequency domain");
 
             self.sample.make_contiguous();
             let waveform_line = Line::new(PlotPoints::from_ys_f32(&self.sample.as_slices().0));
