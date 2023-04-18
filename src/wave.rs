@@ -1,11 +1,11 @@
 use rand::prelude::*;
-pub const C_FREQ: f32 = 261.63;
-pub const D_FREQ: f32 = 293.66;
-pub const E_FREQ: f32 = 329.63;
-pub const F_FREQ: f32 = 349.23;
-pub const G_FREQ: f32 = 392.00;
-pub const A_FREQ: f32 = 440.0;
-pub const B_FREQ: f32 = 493.88;
+pub const C_FREQ: f32 = 16.35;
+pub const D_FREQ: f32 = 18.35;
+pub const E_FREQ: f32 = 20.60;
+pub const F_FREQ: f32 = 21.83;
+pub const G_FREQ: f32 = 24.50;
+pub const A_FREQ: f32 = 27.50;
+pub const B_FREQ: f32 = 30.87;
 
 pub fn sine(freq: f32, tick: f32) -> f32 {
     // let volume = 0.2; // volume should not be here, also hard coded sample rate is not good

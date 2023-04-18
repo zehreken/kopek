@@ -14,6 +14,7 @@ pub struct View {
     input_producer: HeapProducer<u8>,
     sample: VecDeque<f32>,
     view_consumer: HeapConsumer<f32>,
+    octave: i8,
 }
 
 impl Default for View {
@@ -32,7 +33,7 @@ impl Default for View {
                 for _ in 0..1024 {
                     if !producer.is_full() {
                         // let value = kopek::wave::saw(freq, tick);
-                        let value = kopek::wave::sine(60.0, tick);
+                        let value = kopek::wave::sine(freq, tick);
                         // let value = kopek::wave::white_noise();
                         // let value = kopek::wave::rand_noise();
                         producer.push(value).unwrap();
@@ -64,7 +65,9 @@ impl Default for View {
                     if input == 6 {
                         freq = B_FREQ;
                     }
-                    if input == 7 {}
+                    if input == 7 {
+                        freq = C_FREQ * 2.0;
+                    }
                 }
             }
         });
@@ -73,18 +76,20 @@ impl Default for View {
             input_producer,
             sample: VecDeque::from([0.0; 1024]),
             view_consumer,
+            octave: 1,
         }
     }
 }
 
 impl eframe::App for View {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-        if let Some(v) = self.view_consumer.pop() {
+        // For visualization
+        while let Some(v) = self.view_consumer.pop() {
             self.sample.pop_front();
             self.sample.push_back(v);
         }
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
-            if ui.button("C").clicked() {
+            if ui.button("C1").clicked() {
                 self.input_producer.push(0).unwrap();
             }
             if ui.button("D").clicked() {
@@ -104,6 +109,20 @@ impl eframe::App for View {
             }
             if ui.button("B").clicked() {
                 self.input_producer.push(6).unwrap();
+            }
+            if ui.button("C2").clicked() {
+                self.input_producer.push(7).unwrap();
+            }
+            if ui.button("down").clicked() {
+                if self.octave > 1 {
+                    self.octave /= 2;
+                }
+            }
+            ui.label(format!("octave: {0}", self.octave));
+            if ui.button("up").clicked() {
+                if self.octave < 16 {
+                    self.octave *= 2;
+                }
             }
         });
         egui::CentralPanel::default().show(ctx, |ui| {
