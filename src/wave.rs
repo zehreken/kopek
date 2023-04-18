@@ -1,4 +1,7 @@
 use rand::prelude::*;
+
+// Frequencies from this page
+// https://pages.mtu.edu/~suits/notefreqs.html
 pub const C_FREQ: f32 = 16.35;
 pub const D_FREQ: f32 = 18.35;
 pub const E_FREQ: f32 = 20.60;
