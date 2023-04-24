@@ -9,21 +9,35 @@ pub const F_FREQ: f32 = 21.83;
 pub const G_FREQ: f32 = 24.50;
 pub const A_FREQ: f32 = 27.50;
 pub const B_FREQ: f32 = 30.87;
+pub const SAMPLE_RATE: f32 = 44100.0;
 
 pub fn sine(freq: f32, tick: f32) -> f32 {
     // let volume = 0.2; // volume should not be here, also hard coded sample rate is not good
 
-    (tick * 2.0 * std::f32::consts::PI * freq / 44100.0).sin() // * volume
+    (tick * 2.0 * std::f32::consts::PI * freq / SAMPLE_RATE).sin() // * volume
 }
 
-pub fn saw(freq: f32, tick: f32) -> f32 {
-    let base = -1.0;
-    let sample_rate = 44100.0;
-    let p = freq / sample_rate;
-    let mut value = base + p * (tick % 200.0);
-    if value >= 1.0 {
-        value -= 2.0;
-    }
+/// This is AI generated code
+// fn sawtooth_wave(freq: f32, sample_rate: f32, duration: f32) -> Vec<f32> {
+//     let num_samples = (duration * sample_rate) as usize;
+//     let freq_incr = freq / sample_rate;
+//     let mut phase: f32 = 0.0;
+//     let mut waveform = Vec::with_capacity(num_samples);
+
+//     for i in 0..num_samples {
+//         let value = 2.0 * (phase - phase.floor()) - 1.0;
+//         waveform.push(value);
+//         phase = (phase + freq_incr) % 1.0;
+//     }
+
+//     waveform
+// }
+
+pub fn sawtooth(freq: f32, tick: f32) -> f32 {
+    let freq_incr = freq / SAMPLE_RATE;
+    let phase: f32 = (tick * freq_incr) % 1.0;
+    let value = 2.0 * (phase - phase.floor()) - 1.0;
+
     value
 }
 

@@ -32,8 +32,8 @@ impl Default for View {
             loop {
                 for _ in 0..1024 {
                     if !producer.is_full() {
-                        // let value = kopek::wave::saw(freq, tick);
-                        let value = kopek::wave::sine(freq, tick);
+                        let value = kopek::wave::sawtooth(freq, tick);
+                        // let value = kopek::wave::sine(freq, tick);
                         // let value = kopek::wave::white_noise();
                         // let value = kopek::wave::rand_noise();
                         producer.push(value).unwrap();
