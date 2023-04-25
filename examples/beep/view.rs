@@ -1,9 +1,10 @@
 use std::collections::VecDeque;
 
+use crate::generator::Generator;
+
 use super::audio::*;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
-use kopek::wave::*;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -20,57 +21,15 @@ pub struct View {
 impl Default for View {
     fn default() -> Self {
         let ring = HeapRb::new(2048);
-        let (mut producer, consumer) = ring.split();
+        let (producer, consumer) = ring.split();
         let input_ring = HeapRb::<(u8, u8)>::new(16);
         let (input_producer, mut input_consumer) = input_ring.split();
         let view_ring = HeapRb::new(100000);
-        let (mut view_producer, view_consumer) = view_ring.split();
+        let (view_producer, view_consumer) = view_ring.split();
         let audio_model = Model::new(consumer).unwrap();
-        std::thread::spawn(move || {
-            let mut tick = 0.0;
-            let mut freq = A_FREQ;
-            loop {
-                for _ in 0..1024 {
-                    if !producer.is_full() {
-                        let value = kopek::wave::sawtooth(freq, tick);
-                        // let value = kopek::wave::sine(freq, tick);
-                        // let value = kopek::wave::white_noise();
-                        // let value = kopek::wave::rand_noise();
-                        producer.push(value).unwrap();
-                        if !view_producer.is_full() {
-                            view_producer.push(value).unwrap();
-                        }
-                        tick += 1.0;
-                    }
-                }
-                if let Some((input, octave)) = input_consumer.pop() {
-                    let octave_factor = 2_u8.pow(octave as u32) as f32;
-                    if input == 0 {
-                        freq = C_FREQ * octave_factor;
-                    }
-                    if input == 1 {
-                        freq = D_FREQ * octave_factor;
-                    }
-                    if input == 2 {
-                        freq = E_FREQ * octave_factor;
-                    }
-                    if input == 3 {
-                        freq = F_FREQ * octave_factor;
-                    }
-                    if input == 4 {
-                        freq = G_FREQ * octave_factor;
-                    }
-                    if input == 5 {
-                        freq = A_FREQ * octave_factor;
-                    }
-                    if input == 6 {
-                        freq = B_FREQ * octave_factor;
-                    }
-                    if input == 7 {
-                        freq = C_FREQ * octave_factor * 2.0;
-                    }
-                }
-            }
+        let mut generator = Generator::new(producer, input_consumer, view_producer).unwrap();
+        std::thread::spawn(move || loop {
+            generator.update();
         });
         Self {
             audio_model,
@@ -90,41 +49,54 @@ impl eframe::App for View {
             self.sample.push_back(v);
         }
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
-            if ui.button("C1").clicked() {
-                self.input_producer.push((0, self.octave)).unwrap();
-            }
-            if ui.button("D").clicked() {
-                self.input_producer.push((1, self.octave)).unwrap();
-            }
-            if ui.button("E").clicked() {
-                self.input_producer.push((2, self.octave)).unwrap();
-            }
-            if ui.button("F").clicked() {
-                self.input_producer.push((3, self.octave)).unwrap();
-            }
-            if ui.button("G").clicked() {
-                self.input_producer.push((4, self.octave)).unwrap();
-            }
-            if ui.button("A").clicked() {
-                self.input_producer.push((5, self.octave)).unwrap();
-            }
-            if ui.button("B").clicked() {
-                self.input_producer.push((6, self.octave)).unwrap();
-            }
-            if ui.button("C2").clicked() {
-                self.input_producer.push((7, self.octave)).unwrap();
-            }
-            if ui.button("down").clicked() {
-                if self.octave > 1 {
-                    self.octave -= 1;
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("start").clicked() {}
+                if ui.button("stop").clicked() {}
+            });
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("sine").clicked() {}
+                if ui.button("sawtooth").clicked() {}
+            });
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("C1").clicked() {
+                    self.input_producer.push((0, self.octave)).unwrap();
                 }
-            }
-            ui.label(format!("octave: {0}", self.octave));
-            if ui.button("up").clicked() {
-                if self.octave < 5 {
-                    self.octave += 1;
+                if ui.button("D").clicked() {
+                    self.input_producer.push((1, self.octave)).unwrap();
                 }
-            }
+                if ui.button("E").clicked() {
+                    self.input_producer.push((2, self.octave)).unwrap();
+                }
+                if ui.button("F").clicked() {
+                    self.input_producer.push((3, self.octave)).unwrap();
+                }
+                if ui.button("G").clicked() {
+                    self.input_producer.push((4, self.octave)).unwrap();
+                }
+                if ui.button("A").clicked() {
+                    self.input_producer.push((5, self.octave)).unwrap();
+                }
+                if ui.button("B").clicked() {
+                    self.input_producer.push((6, self.octave)).unwrap();
+                }
+                if ui.button("C2").clicked() {
+                    self.input_producer.push((7, self.octave)).unwrap();
+                }
+            });
+
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("down").clicked() {
+                    if self.octave > 1 {
+                        self.octave -= 1;
+                    }
+                }
+                ui.label(format!("octave: {0}", self.octave));
+                if ui.button("up").clicked() {
+                    if self.octave < 5 {
+                        self.octave += 1;
+                    }
+                }
+            });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's

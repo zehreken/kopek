@@ -1,5 +1,6 @@
 use rand::prelude::*;
 
+pub const SAMPLE_RATE: f32 = 44100.0;
 // Frequencies from this page
 // https://pages.mtu.edu/~suits/notefreqs.html
 pub const C_FREQ: f32 = 16.35;
@@ -9,7 +10,6 @@ pub const F_FREQ: f32 = 21.83;
 pub const G_FREQ: f32 = 24.50;
 pub const A_FREQ: f32 = 27.50;
 pub const B_FREQ: f32 = 30.87;
-pub const SAMPLE_RATE: f32 = 44100.0;
 
 pub fn sine(freq: f32, tick: f32) -> f32 {
     // let volume = 0.2; // volume should not be here, also hard coded sample rate is not good
