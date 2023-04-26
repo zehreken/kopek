@@ -54,8 +54,12 @@ impl eframe::App for View {
                 if ui.button("stop").clicked() {}
             });
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                if ui.button("sine").clicked() {}
-                if ui.button("sawtooth").clicked() {}
+                if ui.button("sine").clicked() {
+                    self.input_producer.push((8, self.octave)).unwrap();
+                }
+                if ui.button("sawtooth").clicked() {
+                    self.input_producer.push((9, self.octave)).unwrap();
+                }
             });
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 if ui.button("C1").clicked() {
