@@ -1,18 +1,17 @@
-use std::collections::VecDeque;
-
-use crate::generator::Generator;
-
 use super::audio::*;
+use crate::generator::Generator;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
+use kopek::wave::*;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
+use std::collections::VecDeque;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct View {
     audio_model: Model,
-    input_producer: HeapProducer<(u8, u8)>, // first is freq, second is octave
+    input_producer: HeapProducer<Input>, // first is freq, second is octave
     sample: VecDeque<f32>,
     view_consumer: HeapConsumer<f32>,
     octave: u8,
@@ -22,7 +21,7 @@ impl Default for View {
     fn default() -> Self {
         let ring = HeapRb::new(2048);
         let (producer, consumer) = ring.split();
-        let input_ring = HeapRb::<(u8, u8)>::new(16);
+        let input_ring = HeapRb::<Input>::new(16);
         let (input_producer, mut input_consumer) = input_ring.split();
         let view_ring = HeapRb::new(100000);
         let (view_producer, view_consumer) = view_ring.split();
@@ -50,41 +49,67 @@ impl eframe::App for View {
         }
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                if ui.button("start").clicked() {}
-                if ui.button("stop").clicked() {}
+                if ui.button("start").clicked() {
+                    self.input_producer.push(Input::Start).unwrap();
+                }
+                if ui.button("stop").clicked() {
+                    self.input_producer.push(Input::Stop).unwrap();
+                }
             });
+            ui.label("Oscillator");
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 if ui.button("sine").clicked() {
-                    self.input_producer.push((8, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeOscillator(0))
+                        .unwrap();
                 }
                 if ui.button("sawtooth").clicked() {
-                    self.input_producer.push((9, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeOscillator(1))
+                        .unwrap();
                 }
             });
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                let octave_factor = 2_u8.pow(self.octave as u32) as f32;
                 if ui.button("C1").clicked() {
-                    self.input_producer.push((0, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(C_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("D").clicked() {
-                    self.input_producer.push((1, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(D_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("E").clicked() {
-                    self.input_producer.push((2, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(E_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("F").clicked() {
-                    self.input_producer.push((3, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(F_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("G").clicked() {
-                    self.input_producer.push((4, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(G_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("A").clicked() {
-                    self.input_producer.push((5, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(A_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("B").clicked() {
-                    self.input_producer.push((6, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(B_FREQ * octave_factor))
+                        .unwrap();
                 }
                 if ui.button("C2").clicked() {
-                    self.input_producer.push((7, self.octave)).unwrap();
+                    self.input_producer
+                        .push(Input::ChangeFreq(C_FREQ * 2.0 * octave_factor))
+                        .unwrap();
                 }
             });
 
@@ -117,4 +142,12 @@ impl eframe::App for View {
         ctx.request_repaint(); // Make UI continuous
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+}
+
+#[derive(Debug)]
+pub enum Input {
+    Start,
+    Stop,
+    ChangeFreq(f32),
+    ChangeOscillator(u8),
 }

@@ -1,3 +1,4 @@
+use crate::view::Input;
 use kopek::wave::*;
 use ringbuf::{HeapConsumer, HeapProducer};
 
@@ -14,14 +15,14 @@ pub struct Generator {
     freq: f32,
     oscillator: Oscillator,
     producer: HeapProducer<f32>,
-    input_consumer: HeapConsumer<(u8, u8)>,
+    input_consumer: HeapConsumer<Input>,
     view_producer: HeapProducer<f32>,
 }
 
 impl Generator {
     pub fn new(
         producer: HeapProducer<f32>,
-        input_consumer: HeapConsumer<(u8, u8)>,
+        input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<f32>,
     ) -> Result<Generator, anyhow::Error> {
         Ok(Generator {
@@ -37,7 +38,7 @@ impl Generator {
 
     pub fn update(&mut self) {
         for _ in 0..1024 {
-            if !self.producer.is_full() {
+            if self.is_running && !self.producer.is_full() {
                 let value = match self.oscillator {
                     Oscillator::Sine => kopek::wave::sine(self.freq, self.tick),
                     Oscillator::Sawtooth => kopek::wave::sawtooth(self.freq, self.tick),
@@ -54,37 +55,19 @@ impl Generator {
             }
         }
         // Input
-        if let Some((input, octave)) = self.input_consumer.pop() {
-            let octave_factor = 2_u8.pow(octave as u32) as f32;
-            if input == 0 {
-                self.freq = C_FREQ * octave_factor;
-            }
-            if input == 1 {
-                self.freq = D_FREQ * octave_factor;
-            }
-            if input == 2 {
-                self.freq = E_FREQ * octave_factor;
-            }
-            if input == 3 {
-                self.freq = F_FREQ * octave_factor;
-            }
-            if input == 4 {
-                self.freq = G_FREQ * octave_factor;
-            }
-            if input == 5 {
-                self.freq = A_FREQ * octave_factor;
-            }
-            if input == 6 {
-                self.freq = B_FREQ * octave_factor;
-            }
-            if input == 7 {
-                self.freq = C_FREQ * octave_factor * 2.0;
-            }
-            if input == 8 {
-                self.oscillator = Oscillator::Sine;
-            }
-            if input == 9 {
-                self.oscillator = Oscillator::Sawtooth;
+        if let Some(input) = self.input_consumer.pop() {
+            match input {
+                Input::Start => self.is_running = true,
+                Input::Stop => self.is_running = false,
+                Input::ChangeFreq(freq) => self.freq = freq,
+                Input::ChangeOscillator(osc) => {
+                    if osc == 0 {
+                        self.oscillator = Oscillator::Sine;
+                    }
+                    if osc == 1 {
+                        self.oscillator = Oscillator::Sawtooth;
+                    }
+                }
             }
         }
     }
