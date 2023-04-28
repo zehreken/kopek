@@ -2,7 +2,7 @@ use crate::view::Input;
 use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer};
 
-enum Oscillator {
+enum OscillatorType {
     Sine,
     Sawtooth,
     Square,
@@ -14,6 +14,7 @@ pub struct Generator {
     tick: f32,
     freq: f32,
     oscillator: Oscillator,
+    oscillator_type: OscillatorType,
     producer: HeapProducer<f32>,
     input_consumer: HeapConsumer<Input>,
     view_producer: HeapProducer<f32>,
@@ -24,12 +25,14 @@ impl Generator {
         producer: HeapProducer<f32>,
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<f32>,
+        sample_rate: f32,
     ) -> Result<Generator, anyhow::Error> {
         Ok(Generator {
             is_running: false,
             tick: 0.0,
             freq: A_FREQ,
-            oscillator: Oscillator::Sine,
+            oscillator: Oscillator::new(sample_rate),
+            oscillator_type: OscillatorType::Sine,
             producer,
             input_consumer,
             view_producer,
@@ -39,11 +42,11 @@ impl Generator {
     pub fn update(&mut self) {
         for _ in 0..1024 {
             if self.is_running && !self.producer.is_full() {
-                let value = match self.oscillator {
-                    Oscillator::Sine => kopek::oscillator::sine(self.freq, self.tick),
-                    Oscillator::Sawtooth => kopek::oscillator::sawtooth(self.freq, self.tick),
-                    Oscillator::Square => todo!(),
-                    Oscillator::Triangle => todo!(),
+                let value = match self.oscillator_type {
+                    OscillatorType::Sine => self.oscillator.sine(self.freq, self.tick),
+                    OscillatorType::Sawtooth => self.oscillator.sawtooth(self.freq, self.tick),
+                    OscillatorType::Square => self.oscillator.square(self.freq, self.tick),
+                    OscillatorType::Triangle => self.oscillator.triangle(self.freq, self.tick),
                 };
                 // let value = kopek::wave::white_noise();
                 // let value = kopek::wave::rand_noise();
@@ -62,10 +65,10 @@ impl Generator {
                 Input::ChangeFreq(freq) => self.freq = freq,
                 Input::ChangeOscillator(osc) => {
                     if osc == 0 {
-                        self.oscillator = Oscillator::Sine;
+                        self.oscillator_type = OscillatorType::Sine;
                     }
                     if osc == 1 {
-                        self.oscillator = Oscillator::Sawtooth;
+                        self.oscillator_type = OscillatorType::Sawtooth;
                     }
                 }
             }

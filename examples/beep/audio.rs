@@ -16,12 +16,13 @@ use ringbuf::HeapConsumer;
 
 const LATENCY_MS: f32 = 10.0;
 
-pub struct Model {
+pub struct AudioModel {
+    pub sample_rate: f32,
     output_stream: Stream,
 }
 
-impl Model {
-    pub fn new(mut consumer: HeapConsumer<f32>) -> Result<Model, anyhow::Error> {
+impl AudioModel {
+    pub fn new(mut consumer: HeapConsumer<f32>) -> Result<AudioModel, anyhow::Error> {
         let host = cpal::default_host();
 
         // Default devices.
@@ -71,14 +72,17 @@ impl Model {
             output_device.build_output_stream(&config, output_data_fn, err_fn, None)?;
         println!("Successfully built streams.");
 
-        // Play the streams.
+        // Play the streams, This is not correct
         println!(
             "Starting the output stream with `{}` milliseconds of latency.",
             LATENCY_MS
         );
         output_stream.play().expect("Can't play output stream");
 
-        Ok(Model { output_stream })
+        Ok(AudioModel {
+            sample_rate: config.sample_rate.0 as f32,
+            output_stream,
+        })
     }
 }
 

@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct View {
-    audio_model: Model,
+    audio_model: AudioModel,
     input_producer: HeapProducer<Input>, // first is freq, second is octave
     sample: VecDeque<f32>,
     view_consumer: HeapConsumer<f32>,
@@ -25,8 +25,14 @@ impl Default for View {
         let (input_producer, mut input_consumer) = input_ring.split();
         let view_ring = HeapRb::new(100000);
         let (view_producer, view_consumer) = view_ring.split();
-        let audio_model = Model::new(consumer).unwrap();
-        let mut generator = Generator::new(producer, input_consumer, view_producer).unwrap();
+        let audio_model = AudioModel::new(consumer).unwrap();
+        let mut generator = Generator::new(
+            producer,
+            input_consumer,
+            view_producer,
+            audio_model.sample_rate,
+        )
+        .unwrap();
         std::thread::spawn(move || loop {
             generator.update();
         });
@@ -48,6 +54,8 @@ impl eframe::App for View {
             self.sample.push_back(v);
         }
         egui::SidePanel::left("left_panel").show(ctx, |ui| {
+            ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
+            ui.add_space(10.0);
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 if ui.button("start").clicked() {
                     self.input_producer.push(Input::Start).unwrap();

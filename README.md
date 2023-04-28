@@ -1,6 +1,7 @@
 # kopek
 
 TODO List
-- Fix hardcoded sample rate
 - Add square wave oscillator
 - Add triangle wave oscillator
+- Move noise functions to own struct
+- Move audio files to a folder
