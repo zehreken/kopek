@@ -1,5 +1,5 @@
 use crate::view::Input;
-use kopek::wave::*;
+use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer};
 
 enum Oscillator {
@@ -40,8 +40,8 @@ impl Generator {
         for _ in 0..1024 {
             if self.is_running && !self.producer.is_full() {
                 let value = match self.oscillator {
-                    Oscillator::Sine => kopek::wave::sine(self.freq, self.tick),
-                    Oscillator::Sawtooth => kopek::wave::sawtooth(self.freq, self.tick),
+                    Oscillator::Sine => kopek::oscillator::sine(self.freq, self.tick),
+                    Oscillator::Sawtooth => kopek::oscillator::sawtooth(self.freq, self.tick),
                     Oscillator::Square => todo!(),
                     Oscillator::Triangle => todo!(),
                 };

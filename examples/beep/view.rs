@@ -2,7 +2,7 @@ use super::audio::*;
 use crate::generator::Generator;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
-use kopek::wave::*;
+use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 use std::collections::VecDeque;
 

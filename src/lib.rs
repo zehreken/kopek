@@ -1,6 +1,6 @@
 pub mod decoder;
 pub mod fft;
-pub mod wave;
+pub mod oscillator;
 
 #[cfg(test)]
 mod tests {
