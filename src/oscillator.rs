@@ -32,11 +32,16 @@ impl Oscillator {
     }
 
     pub fn square(&self, freq: f32, tick: f32) -> f32 {
-        todo!("not implemented")
+        let value = (tick * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin();
+        if value > 0.0 {
+            1.0
+        } else {
+            -1.0
+        }
     }
 
     pub fn triangle(&self, freq: f32, tick: f32) -> f32 {
-        todo!("not implemented")
+        todo!()
     }
 }
 

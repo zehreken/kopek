@@ -2,7 +2,7 @@ use crate::view::Input;
 use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer};
 
-enum OscillatorType {
+pub enum OscillatorType {
     Sine,
     Sawtooth,
     Square,
@@ -69,6 +69,12 @@ impl Generator {
                     }
                     if osc == 1 {
                         self.oscillator_type = OscillatorType::Sawtooth;
+                    }
+                    if osc == 2 {
+                        self.oscillator_type = OscillatorType::Square;
+                    }
+                    if osc == 3 {
+                        self.oscillator_type = OscillatorType::Triangle;
                     }
                 }
             }

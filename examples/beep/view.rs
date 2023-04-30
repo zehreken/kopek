@@ -76,6 +76,16 @@ impl eframe::App for View {
                         .push(Input::ChangeOscillator(1))
                         .unwrap();
                 }
+                if ui.button("square").clicked() {
+                    self.input_producer
+                        .push(Input::ChangeOscillator(2))
+                        .unwrap();
+                }
+                if ui.button("triangle").clicked() {
+                    self.input_producer
+                        .push(Input::ChangeOscillator(3))
+                        .unwrap();
+                }
             });
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 let octave_factor = 2_u8.pow(self.octave as u32) as f32;
