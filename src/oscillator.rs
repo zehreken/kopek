@@ -41,7 +41,11 @@ impl Oscillator {
     }
 
     pub fn triangle(&self, freq: f32, tick: f32) -> f32 {
-        todo!()
+        let freq_incr = freq / self.sample_rate;
+        let phase: f32 = (tick * freq_incr) % 1.0;
+        let value = 1.0 - 4.0 * (phase - 0.5).abs();
+
+        value
     }
 }
 
