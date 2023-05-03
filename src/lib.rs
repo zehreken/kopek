@@ -1,5 +1,6 @@
 pub mod decoder;
 pub mod fft;
+pub mod noise;
 pub mod oscillator;
 
 #[cfg(test)]

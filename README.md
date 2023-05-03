@@ -1,7 +1,6 @@
 # kopek
 
 TODO List
-- Add square wave oscillator
-- Add triangle wave oscillator
-- Move noise functions to own struct
 - Move audio files to a folder
+- Research about time in music and time keeping
+- Use noise functions in the example
