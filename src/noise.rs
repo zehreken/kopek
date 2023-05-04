@@ -1,13 +1,14 @@
-use rand::prelude::*;
+use rand::rngs::OsRng;
+use rand::Rng;
 
 pub struct Noise {
-    rand_gen: ThreadRng,
+    rand_gen: OsRng,
 }
 
 impl Noise {
     pub fn new() -> Self {
         Self {
-            rand_gen: rand::thread_rng(),
+            rand_gen: OsRng::default(),
         }
     }
 

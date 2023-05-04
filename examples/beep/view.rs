@@ -2,6 +2,7 @@ use super::audio::*;
 use crate::generator::Generator;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
+use kopek::noise::*;
 use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 use std::collections::VecDeque;
@@ -22,7 +23,7 @@ impl Default for View {
         let ring = HeapRb::new(2048);
         let (producer, consumer) = ring.split();
         let input_ring = HeapRb::<Input>::new(16);
-        let (input_producer, mut input_consumer) = input_ring.split();
+        let (input_producer, input_consumer) = input_ring.split();
         let view_ring = HeapRb::new(100000);
         let (view_producer, view_consumer) = view_ring.split();
         let audio_model = AudioModel::new(consumer).unwrap();
@@ -62,6 +63,18 @@ impl eframe::App for View {
                 }
                 if ui.button("stop").clicked() {
                     self.input_producer.push(Input::Stop).unwrap();
+                }
+            });
+            ui.label("Noise");
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("none").clicked() {
+                    self.input_producer.push(Input::ChangeNoise(0)).unwrap();
+                }
+                if ui.button("random").clicked() {
+                    self.input_producer.push(Input::ChangeNoise(1)).unwrap();
+                }
+                if ui.button("white").clicked() {
+                    self.input_producer.push(Input::ChangeNoise(2)).unwrap();
                 }
             });
             ui.label("Oscillator");
@@ -168,4 +181,5 @@ pub enum Input {
     Stop,
     ChangeFreq(f32),
     ChangeOscillator(u8),
+    ChangeNoise(u8),
 }
