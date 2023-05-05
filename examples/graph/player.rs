@@ -7,17 +7,17 @@ use cpal::{
 use std::sync::mpsc::{Receiver, Sender};
 
 pub const PATHS: [&str; 11] = [
-    "sine_100.ogg",
-    "sine_200.ogg",
-    "sine_440.ogg",
-    "sine_500.ogg",
-    "sine_1000.ogg",
-    "sine_10000.ogg",
-    "sine_440hz_stereo.ogg",
-    "stress_free.wav",
-    "overture.wav",
-    "100_200_400_1000_10000.wav",
-    "sample.wav",
+    "assets/audio_samples/sine_100.ogg",
+    "assets/audio_samples/sine_200.ogg",
+    "assets/audio_samples/sine_440.ogg",
+    "assets/audio_samples/sine_500.ogg",
+    "assets/audio_samples/sine_1000.ogg",
+    "assets/audio_samples/sine_10000.ogg",
+    "assets/audio_samples/sine_440hz_stereo.ogg",
+    "assets/audio_samples/stress_free.wav",
+    "assets/audio_samples/overture.wav",
+    "assets/audio_samples/100_200_400_1000_10000.wav",
+    "assets/audio_samples/sample.wav",
 ];
 
 pub struct Player {
