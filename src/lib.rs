@@ -1,7 +1,9 @@
 pub mod decoder;
 pub mod fft;
+pub mod metronome;
 pub mod noise;
 pub mod oscillator;
+pub mod time_signature;
 
 #[cfg(test)]
 mod tests {
