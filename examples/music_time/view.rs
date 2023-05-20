@@ -1,5 +1,5 @@
 use super::audio::*;
-use crate::temp::Temp;
+use crate::app::App;
 use eframe::egui;
 use egui::plot::{Line, Plot, PlotPoints};
 use kopek::{
@@ -29,7 +29,7 @@ impl Default for View {
         // let view_ring = HeapRb::new(100000);
         // let (view_producer, view_consumer) = view_ring.split();
         let audio_model = AudioModel::new(consumer).unwrap();
-        let mut temp = Temp::new(producer, 44100.0).unwrap();
+        let mut temp = App::new(producer, 44100.0).unwrap();
         std::thread::spawn(move || loop {
             temp.update();
         });

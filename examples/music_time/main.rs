@@ -1,5 +1,5 @@
+mod app;
 mod audio;
-mod temp;
 mod view;
 
 #[cfg(not(target_arch = "wasm32"))]
