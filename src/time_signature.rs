@@ -1,4 +1,4 @@
-use crate::{metronome::Metronome, oscillator};
+use crate::metronome::Metronome;
 
 // The idea with this is that time_signature will use the metronome
 // to count a specific time, e.g. 4/4, 3/4, 7/8 etc.
@@ -11,13 +11,16 @@ pub struct TimeSignature {
 
 impl TimeSignature {
     pub fn new(time: (u8, u8), bpm: u16) -> Self {
-        let metronome = Metronome::new(bpm, 44100, 4);
+        let metronome = Metronome::new(bpm, 44100, 2);
         Self { time, metronome }
     }
 
-    pub fn update(&mut self) -> bool {
+    pub fn update(&mut self) -> (bool, bool) {
         self.metronome.update();
 
-        self.metronome.show_beat() && self.metronome.get_beat_index() % self.time.0 as u32 == 0
+        (
+            self.metronome.show_beat(),                                // beat
+            self.metronome.get_beat_index() % self.time.0 as u32 == 0, // accent
+        )
     }
 }
