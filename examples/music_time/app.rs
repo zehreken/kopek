@@ -1,21 +1,32 @@
 use kopek::{oscillator::*, time_signature::TimeSignature};
-use ringbuf::HeapProducer;
+use ringbuf::{HeapConsumer, HeapProducer};
+
+use crate::view::{Input, ViewMessage};
 
 pub struct App {
     tick: f32,
     oscillator: Oscillator,
     producer: HeapProducer<f32>,
+    input_consumer: HeapConsumer<Input>,
+    view_producer: HeapProducer<ViewMessage>,
     time_4_4: TimeSignature,
     time_3_4: TimeSignature,
     time_5_4: TimeSignature,
 }
 
 impl App {
-    pub fn new(producer: HeapProducer<f32>, sample_rate: f32) -> Result<App, anyhow::Error> {
+    pub fn new(
+        sample_rate: f32,
+        producer: HeapProducer<f32>,
+        input_consumer: HeapConsumer<Input>,
+        view_producer: HeapProducer<ViewMessage>,
+    ) -> Result<App, anyhow::Error> {
         Ok(App {
             tick: 0.0,
             oscillator: Oscillator::new(sample_rate),
             producer,
+            input_consumer,
+            view_producer,
             time_4_4: TimeSignature::new((4, 4), 120),
             time_3_4: TimeSignature::new((3, 4), 90),
             time_5_4: TimeSignature::new((5, 4), 75),
@@ -33,17 +44,29 @@ impl App {
 
                 let (show_3_4, accent) = self.time_3_4.update();
                 if show_3_4 {
-                    value += self.oscillator.sine(E_FREQ * 16.0, self.tick);
+                    value += self.oscillator.square(E_FREQ * 16.0, self.tick);
                 }
 
                 let (show_5_4, accent) = self.time_5_4.update();
                 if show_5_4 {
-                    // value += self.oscillator.sine(G_FREQ * 16.0, self.tick);
+                    value += self.oscillator.triangle(G_FREQ * 16.0, self.tick);
                 }
 
                 self.producer.push(value).unwrap();
                 self.tick += 1.0;
             }
+        }
+
+        if self.view_producer.free_len() >= 3 {
+            self.view_producer
+                .push(ViewMessage::Beat4_4(self.time_4_4.get_beat_index()))
+                .unwrap();
+            self.view_producer
+                .push(ViewMessage::Beat3_4(self.time_3_4.get_beat_index()))
+                .unwrap();
+            self.view_producer
+                .push(ViewMessage::Beat5_4(self.time_5_4.get_beat_index()))
+                .unwrap();
         }
     }
 }

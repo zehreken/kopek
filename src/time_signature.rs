@@ -23,4 +23,8 @@ impl TimeSignature {
             self.metronome.get_beat_index() % self.time.0 as u32 == 0, // accent
         )
     }
+
+    pub fn get_beat_index(&self) -> u32 {
+        self.metronome.get_beat_index()
+    }
 }
