@@ -47,11 +47,38 @@ impl eframe::App for View {
                 ViewMessage::Beat5_4(v) => beat_5_4 = v,
             }
         }
-        egui::SidePanel::left("left_panel").show(ctx, |ui| {
+        egui::CentralPanel::default().show(ctx, |ui| {
             ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
             ui.label(format!("4/4 {0}", beat_4_4));
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                for i in 0..4 {
+                    if beat_4_4 % 4 == i {
+                        ui.label("+ ");
+                    } else {
+                        ui.label("- ");
+                    }
+                }
+            });
             ui.label(format!("3/4 {0}", beat_3_4));
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                for i in 0..3 {
+                    if beat_3_4 % 3 == i {
+                        ui.label("+ ");
+                    } else {
+                        ui.label("- ");
+                    }
+                }
+            });
             ui.label(format!("5/4 {0}", beat_5_4));
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                for i in 0..5 {
+                    if beat_5_4 % 5 == i {
+                        ui.label("+ ");
+                    } else {
+                        ui.label("- ");
+                    }
+                }
+            });
         });
 
         ctx.request_repaint(); // Make UI continuous
