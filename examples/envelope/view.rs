@@ -47,12 +47,9 @@ impl eframe::App for View {
                 ViewMessage::Beat5_4(v) => beat_5_4 = v,
             }
         }
-        if ctx.input(|i| i.key_pressed(egui::Key::A)) {
-            println!("A pressed!");
-        }
-        if ctx.input(|i| i.key_released(egui::Key::A)) {
-            println!("A released!");
-        }
+
+        check_input(ctx);
+
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
         });
@@ -60,6 +57,28 @@ impl eframe::App for View {
         ctx.request_repaint(); // Make UI continuous
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+}
+
+fn check_input(ctx: &egui::Context) {
+    ctx.input(|i| {
+        i.events.iter().for_each(|e| match e {
+            egui::Event::Key {
+                key,
+                pressed,
+                repeat,
+                ..
+            } => {
+                if *key == egui::Key::A {
+                    if *pressed && !*repeat {
+                        println!("A pressed!");
+                    } else if !*pressed {
+                        println!("A released!")
+                    }
+                }
+            }
+            _ => {}
+        })
+    });
 }
 
 #[derive(Debug)]
