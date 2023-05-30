@@ -108,7 +108,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 color: Color::rgb(0.5, 0.5, 1.0),
             },
         ) // Set the alignment of the Text
-        .with_text_alignment(TextAlignment::TOP_CENTER)
+        .with_text_alignment(TextAlignment::Center)
         // Set the style of the TextBundle itself.
         .with_style(Style {
             position_type: PositionType::Absolute,
