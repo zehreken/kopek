@@ -1,4 +1,4 @@
-use kopek::{oscillator::*, time_signature::TimeSignature};
+use kopek::{envelope::*, oscillator::*, time_signature::TimeSignature};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 use crate::view::{Input, ViewMessage};
@@ -9,6 +9,7 @@ pub struct App {
     producer: HeapProducer<f32>,
     input_consumer: HeapConsumer<Input>,
     view_producer: HeapProducer<ViewMessage>,
+    envelope: Envelope,
     time_4_4: TimeSignature,
     time_3_4: TimeSignature,
     time_5_4: TimeSignature,
@@ -27,6 +28,7 @@ impl App {
             producer,
             input_consumer,
             view_producer,
+            envelope: Envelope::new(),
             time_4_4: TimeSignature::new((4, 4), 120),
             time_3_4: TimeSignature::new((3, 4), 90),
             time_5_4: TimeSignature::new((5, 4), 75),

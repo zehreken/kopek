@@ -1,4 +1,5 @@
 pub mod decoder;
+pub mod envelope;
 pub mod fft;
 pub mod metronome;
 pub mod noise;
