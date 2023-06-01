@@ -59,6 +59,8 @@ impl App {
             }
         }
 
+        self.envelope.update(false, false);
+
         if self.view_producer.free_len() >= 3 {
             self.view_producer
                 .push(ViewMessage::Beat4_4(self.time_4_4.get_beat_index()))

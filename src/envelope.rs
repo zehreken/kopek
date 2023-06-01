@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 pub struct Envelope {
     state: EnvelopeState,
 }
@@ -12,10 +14,26 @@ impl Envelope {
     pub fn update(&mut self, pressed: bool, released: bool) {
         match self.state {
             EnvelopeState::Idle => self.state = EnvelopeState::Attack,
-            EnvelopeState::Attack => todo!(),
-            EnvelopeState::Decay => todo!(),
-            EnvelopeState::Sustain => todo!(),
-            EnvelopeState::Release => todo!(),
+            EnvelopeState::Attack => {
+                println!("Attack");
+                std::thread::sleep(Duration::from_millis(100));
+                self.state = EnvelopeState::Decay;
+            }
+            EnvelopeState::Decay => {
+                println!("Decay");
+                std::thread::sleep(Duration::from_millis(100));
+                self.state = EnvelopeState::Sustain;
+            }
+            EnvelopeState::Sustain => {
+                println!("Sustain");
+                std::thread::sleep(Duration::from_millis(250));
+                self.state = EnvelopeState::Release;
+            }
+            EnvelopeState::Release => {
+                println!("Release");
+                std::thread::sleep(Duration::from_millis(100));
+                self.state = EnvelopeState::Idle;
+            }
         }
     }
 
