@@ -17,7 +17,8 @@ use ringbuf::HeapConsumer;
 const LATENCY_MS: f32 = 10.0;
 
 pub struct AudioModel {
-    pub sample_rate: f32,
+    sample_rate: f32,
+    channel_count: u16,
     output_stream: Stream,
 }
 
@@ -53,8 +54,6 @@ impl AudioModel {
         //     producer.push(0.0).unwrap();
         // }
 
-        let channel_count = config.channels as usize;
-
         let output_data_fn = move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
             for sample in data {
                 if let Some(input) = consumer.pop() {
@@ -81,8 +80,17 @@ impl AudioModel {
 
         Ok(AudioModel {
             sample_rate: config.sample_rate.0 as f32,
+            channel_count: config.channels,
             output_stream,
         })
+    }
+
+    pub fn get_sample_rate(&self) -> f32 {
+        self.sample_rate
+    }
+
+    pub fn get_channel_count(&self) -> u16 {
+        self.channel_count
     }
 }
 

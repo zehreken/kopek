@@ -10,8 +10,8 @@ pub struct TimeSignature {
 }
 
 impl TimeSignature {
-    pub fn new(time: (u8, u8), bpm: u16) -> Self {
-        let metronome = Metronome::new(bpm, 44100, 2);
+    pub fn new(time: (u8, u8), bpm: u16, sample_rate: u32, channel_count: u16) -> Self {
+        let metronome = Metronome::new(bpm, sample_rate, channel_count as u32);
         Self { time, metronome }
     }
 
