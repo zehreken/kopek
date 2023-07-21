@@ -1,3 +1,4 @@
+#[derive(Clone, Copy)]
 pub struct Metronome {
     pub is_running: bool,
     beat_index: u32,

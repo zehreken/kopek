@@ -1,5 +1,5 @@
 use super::audio::*;
-use crate::app::App;
+use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
@@ -47,11 +47,13 @@ impl eframe::App for View {
         let mut beat_4_4 = 0;
         let mut beat_3_4 = 0;
         let mut beat_5_4 = 0;
+        let mut beats: [u32; BEAT_COUNT] = [0; BEAT_COUNT];
         while let Some(message) = self.view_consumer.pop() {
             match message {
                 ViewMessage::Beat4_4(v) => beat_4_4 = v,
                 ViewMessage::Beat3_4(v) => beat_3_4 = v,
                 ViewMessage::Beat5_4(v) => beat_5_4 = v,
+                ViewMessage::Beat(i, v) => beats[i as usize] = v,
             }
         }
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -108,4 +110,5 @@ pub enum ViewMessage {
     Beat4_4(u32),
     Beat3_4(u32),
     Beat5_4(u32),
+    Beat(u16, u32),
 }
