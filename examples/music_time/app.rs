@@ -111,4 +111,8 @@ impl ExampleBeat {
             is_running: false,
         }
     }
+
+    pub fn toggle(&mut self) {
+        self.is_running = !self.is_running;
+    }
 }

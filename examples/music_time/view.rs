@@ -1,6 +1,7 @@
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
+use kopek::oscillator::C_FREQ;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -10,6 +11,7 @@ pub struct View {
     audio_model: AudioModel,
     input_producer: HeapProducer<Input>, // first is freq, second is octave
     view_consumer: HeapConsumer<ViewMessage>,
+    beat_views: [ExampleBeatView; BEAT_COUNT],
 }
 
 impl Default for View {
@@ -34,10 +36,12 @@ impl Default for View {
             .spawn(move || loop {
                 app.update();
             });
+        let beat_views = [ExampleBeatView::default(); BEAT_COUNT];
         Self {
             audio_model,
             input_producer,
             view_consumer,
+            beat_views,
         }
     }
 }
@@ -91,6 +95,15 @@ impl eframe::App for View {
                     }
                 }
             });
+            for (i, beat) in beats.iter().enumerate() {
+                ui.label(format!("beat {}", i));
+                if beat % 4 == 0 {
+                    ui.label("bum");
+                }
+                if ui.button("▶■").clicked() {
+                    println!("add new time");
+                }
+            }
         });
 
         ctx.request_repaint(); // Make UI continuous
@@ -111,4 +124,21 @@ pub enum ViewMessage {
     Beat3_4(u32),
     Beat5_4(u32),
     Beat(u16, u32),
+}
+
+#[derive(Clone, Copy)]
+struct ExampleBeatView {
+    time_signature: (u8, u8),
+    key: f32,
+    is_running: bool,
+}
+
+impl ExampleBeatView {
+    fn default() -> Self {
+        Self {
+            time_signature: (4, 4),
+            key: C_FREQ,
+            is_running: false,
+        }
+    }
 }
