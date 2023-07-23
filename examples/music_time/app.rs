@@ -24,7 +24,7 @@ impl App {
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<ViewMessage>,
     ) -> Result<App, anyhow::Error> {
-        let example_beat = ExampleBeat::new(sample_rate as u32, channel_count);
+        let example_beat = ExampleBeat::new((4, 4), 120, sample_rate as u32, channel_count);
         Ok(App {
             tick: 0.0,
             oscillator: Oscillator::new(sample_rate),
@@ -59,7 +59,7 @@ impl App {
 
                 for beat in &mut self.beats {
                     let (show, accent) = beat.time_signature.update();
-                    if show {
+                    if show && beat.is_running {
                         value += self.oscillator.sine(beat.key * 16.0, self.tick);
                     }
                 }
@@ -69,16 +69,12 @@ impl App {
             }
         }
 
-        if self.view_producer.free_len() >= 3 {
-            self.view_producer
-                .push(ViewMessage::Beat4_4(self.time_4_4.get_beat_index()))
-                .unwrap();
-            self.view_producer
-                .push(ViewMessage::Beat3_4(self.time_3_4.get_beat_index()))
-                .unwrap();
-            self.view_producer
-                .push(ViewMessage::Beat5_4(self.time_5_4.get_beat_index()))
-                .unwrap();
+        while let Some(message) = self.input_consumer.pop() {
+            match message {
+                Input::Toggle(i) => self.beats[i].toggle(),
+                Input::Delete(_) => todo!(),
+                Input::Select(_) => todo!(),
+            }
         }
 
         if self.view_producer.free_len() >= 5 {
@@ -100,14 +96,16 @@ impl App {
 struct ExampleBeat {
     time_signature: TimeSignature,
     key: f32,
+    oscillation: u8,
     is_running: bool,
 }
 
 impl ExampleBeat {
-    pub fn new(sample_rate: u32, channel_count: u16) -> Self {
+    pub fn new(time: (u8, u8), bpm: u16, sample_rate: u32, channel_count: u16) -> Self {
         Self {
-            time_signature: TimeSignature::new((4, 4), 120, sample_rate, channel_count),
+            time_signature: TimeSignature::new(time, bpm, sample_rate, channel_count),
             key: C_FREQ,
+            oscillation: 0,
             is_running: false,
         }
     }

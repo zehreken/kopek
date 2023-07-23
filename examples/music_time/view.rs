@@ -48,15 +48,9 @@ impl Default for View {
 
 impl eframe::App for View {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let mut beat_4_4 = 0;
-        let mut beat_3_4 = 0;
-        let mut beat_5_4 = 0;
         let mut beats: [u32; BEAT_COUNT] = [0; BEAT_COUNT];
         while let Some(message) = self.view_consumer.pop() {
             match message {
-                ViewMessage::Beat4_4(v) => beat_4_4 = v,
-                ViewMessage::Beat3_4(v) => beat_3_4 = v,
-                ViewMessage::Beat5_4(v) => beat_5_4 = v,
                 ViewMessage::Beat(i, v) => beats[i as usize] = v,
             }
         }
@@ -65,45 +59,36 @@ impl eframe::App for View {
                 "Sample rate: {0}Hz",
                 self.audio_model.get_sample_rate()
             ));
-            ui.label(format!("4/4 {0}", beat_4_4));
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                for i in 0..4 {
-                    if beat_4_4 % 4 == i {
-                        ui.label("+ ");
-                    } else {
-                        ui.label("- ");
-                    }
-                }
-            });
-            ui.label(format!("3/4 {0}", beat_3_4));
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                for i in 0..3 {
-                    if beat_3_4 % 3 == i {
-                        ui.label("+ ");
-                    } else {
-                        ui.label("- ");
-                    }
-                }
-            });
-            ui.label(format!("5/4 {0}", beat_5_4));
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                for i in 0..5 {
-                    if beat_5_4 % 5 == i {
-                        ui.label("+ ");
-                    } else {
-                        ui.label("- ");
-                    }
-                }
-            });
             for (i, beat) in beats.iter().enumerate() {
-                ui.label(format!("beat {}", i));
-                if beat % 4 == 0 {
-                    ui.label("bum");
-                }
-                if ui.button("▶■").clicked() {
-                    println!("add new time");
+                let (beat_count, beat_length) = self.beat_views[i].time_signature;
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                    if ui.button("x").clicked() {}
+                    ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
+                });
+                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                    for i in 0..beat_count as u32 {
+                        if beat % 4 == i {
+                            ui.label("+ ");
+                        } else {
+                            ui.label("- ");
+                        }
+                    }
+                });
+                if self.beat_views[i].is_running {
+                    if ui.button("■").clicked() {
+                        dbg!("stop beat");
+                        self.beat_views[i].is_running = false;
+                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                    }
+                } else {
+                    if ui.button("▶").clicked() {
+                        dbg!("start beat");
+                        self.beat_views[i].is_running = true;
+                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                    }
                 }
             }
+            if ui.button("new").clicked() {}
         });
 
         ctx.request_repaint(); // Make UI continuous
@@ -113,16 +98,13 @@ impl eframe::App for View {
 
 #[derive(Debug)]
 pub enum Input {
-    Start,
-    Stop,
+    Toggle(usize),
+    Delete(usize),
     Select(u8),
 }
 
 #[derive(Debug)]
 pub enum ViewMessage {
-    Beat4_4(u32),
-    Beat3_4(u32),
-    Beat5_4(u32),
     Beat(u16, u32),
 }
 
