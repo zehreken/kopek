@@ -4,7 +4,7 @@ use crate::metronome::Metronome;
 // to count a specific time, e.g. 4/4, 3/4, 7/8 etc.
 // Since metronome or bpm is required and used the same way
 // by any time signature
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct TimeSignature {
     time: (u8, u8),
     metronome: Metronome,

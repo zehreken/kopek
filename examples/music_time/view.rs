@@ -11,7 +11,7 @@ pub struct View {
     audio_model: AudioModel,
     input_producer: HeapProducer<Input>, // first is freq, second is octave
     view_consumer: HeapConsumer<ViewMessage>,
-    beat_views: [ExampleBeatView; BEAT_COUNT],
+    beat_views: [Option<ExampleBeatView>; BEAT_COUNT],
 }
 
 impl Default for View {
@@ -36,7 +36,7 @@ impl Default for View {
             .spawn(move || loop {
                 app.update();
             });
-        let beat_views = [ExampleBeatView::default(); BEAT_COUNT];
+        let beat_views = [Some(ExampleBeatView::default()); BEAT_COUNT];
         Self {
             audio_model,
             input_producer,
@@ -60,35 +60,49 @@ impl eframe::App for View {
                 self.audio_model.get_sample_rate()
             ));
             for (i, beat) in beats.iter().enumerate() {
-                let (beat_count, beat_length) = self.beat_views[i].time_signature;
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                    if ui.button("x").clicked() {}
-                    ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
-                });
-                ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                    for i in 0..beat_count as u32 {
-                        if beat % 4 == i {
-                            ui.label("+ ");
-                        } else {
-                            ui.label("- ");
+                if let Some(mut beat_view) = self.beat_views[i] {
+                    let (beat_count, beat_length) = beat_view.time_signature;
+
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                        for i in 0..beat_count as u32 {
+                            if beat % 4 == i {
+                                ui.label("+ ");
+                            } else {
+                                ui.label("- ");
+                            }
                         }
-                    }
-                });
-                if self.beat_views[i].is_running {
-                    if ui.button("■").clicked() {
-                        dbg!("stop beat");
-                        self.beat_views[i].is_running = false;
-                        self.input_producer.push(Input::Toggle(i)).unwrap();
-                    }
+                        if beat_view.is_running {
+                            if ui.button("■").clicked() {
+                                dbg!("stop beat");
+                                beat_view.is_running = false;
+                                self.input_producer.push(Input::Toggle(i)).unwrap();
+                            }
+                        } else {
+                            if ui.button("▶").clicked() {
+                                dbg!("start beat");
+                                beat_view.is_running = true;
+                                self.input_producer.push(Input::Toggle(i)).unwrap();
+                            }
+                        }
+                        ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
+
+                        // You need to write it back to the array because
+                        // Since there is no reference but only data
+                        self.beat_views[i] = Some(beat_view);
+                        if ui.button("-").clicked() {
+                            self.beat_views[i] = None;
+                            self.input_producer.push(Input::Delete(i)).unwrap();
+                        }
+                    });
                 } else {
-                    if ui.button("▶").clicked() {
-                        dbg!("start beat");
-                        self.beat_views[i].is_running = true;
-                        self.input_producer.push(Input::Toggle(i)).unwrap();
-                    }
+                    ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                        if ui.button("+").clicked() {
+                            self.input_producer.push(Input::Create(i)).unwrap();
+                            self.beat_views[i] = Some(ExampleBeatView::default());
+                        }
+                    });
                 }
             }
-            if ui.button("new").clicked() {}
         });
 
         ctx.request_repaint(); // Make UI continuous
@@ -100,7 +114,7 @@ impl eframe::App for View {
 pub enum Input {
     Toggle(usize),
     Delete(usize),
-    Select(u8),
+    Create(usize),
 }
 
 #[derive(Debug)]

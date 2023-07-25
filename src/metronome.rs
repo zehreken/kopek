@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Metronome {
     pub is_running: bool,
     beat_index: u32,
@@ -19,6 +19,7 @@ impl Metronome {
         }
     }
 
+    // update should be called from the audio thread and while processing the samples
     pub fn update(&mut self) {
         self.sample_count += 1;
 
@@ -27,11 +28,17 @@ impl Metronome {
         self.beat_index = self.sample_count / self.tick_period as u32;
     }
 
+    // Current number of beats played, similar to elapsed time
     pub fn get_beat_index(&self) -> u32 {
         self.beat_index
     }
 
+    // Used to make a sound or visualize
     pub fn show_beat(&self) -> bool {
         self.show_beat
     }
+
+    // This is to sync the metronome with the app, if the metronome is created
+    // after the app has started
+    pub fn sync(&self, ticks: u32) {}
 }
