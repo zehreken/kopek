@@ -40,5 +40,7 @@ impl Metronome {
 
     // This is to sync the metronome with the app, if the metronome is created
     // after the app has started
-    pub fn sync(&self, ticks: u32) {}
+    pub fn sync(&mut self, elapsed_samples: u32) {
+        self.sample_count = elapsed_samples;
+    }
 }

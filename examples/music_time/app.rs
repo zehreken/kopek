@@ -7,7 +7,7 @@ pub const BEAT_COUNT: usize = 3;
 pub struct App {
     sample_rate: f32,
     channel_count: u16,
-    tick: f32,
+    tick: u32,
     oscillator: Oscillator,
     producer: HeapProducer<f32>,
     input_consumer: HeapConsumer<Input>,
@@ -27,7 +27,7 @@ impl App {
         Ok(App {
             sample_rate,
             channel_count,
-            tick: 0.0,
+            tick: 0,
             oscillator: Oscillator::new(sample_rate),
             producer,
             input_consumer,
@@ -47,14 +47,14 @@ impl App {
                     if let Some(mut beat) = self.beats[i] {
                         let (show, accent) = beat.time_signature.update();
                         if show && beat.is_running {
-                            value += self.oscillator.sine(beat.key * 16.0, self.tick);
+                            value += self.oscillator.sine(beat.key * 16.0, self.tick as f32);
                         }
                         self.beats[i] = Some(beat);
                     }
                 }
 
                 self.producer.push(value).unwrap();
-                self.tick += 1.0;
+                self.tick += 1;
             }
         }
 
@@ -68,12 +68,10 @@ impl App {
                 }
                 Input::Delete(i) => self.beats[i] = None,
                 Input::Create(i) => {
-                    self.beats[i] = Some(ExampleBeat::new(
-                        (4, 4),
-                        120,
-                        self.sample_rate as u32,
-                        self.channel_count,
-                    ))
+                    let mut new_beat =
+                        ExampleBeat::new((4, 4), 120, self.sample_rate as u32, self.channel_count);
+                    new_beat.sync(self.tick);
+                    self.beats[i] = Some(new_beat);
                 }
             }
         }
@@ -115,5 +113,9 @@ impl ExampleBeat {
 
     pub fn toggle(&mut self) {
         self.is_running = !self.is_running;
+    }
+
+    pub fn sync(&mut self, elapsed_samples: u32) {
+        self.time_signature.sync(elapsed_samples);
     }
 }

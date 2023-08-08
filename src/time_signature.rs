@@ -28,4 +28,8 @@ impl TimeSignature {
     pub fn get_beat_index(&self) -> u32 {
         self.metronome.get_beat_index()
     }
+
+    pub fn sync(&mut self, elapsed_samples: u32) {
+        self.metronome.sync(elapsed_samples);
+    }
 }
