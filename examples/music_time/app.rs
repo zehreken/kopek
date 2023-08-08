@@ -47,7 +47,10 @@ impl App {
                     if let Some(mut beat) = self.beats[i] {
                         let (show, accent) = beat.time_signature.update();
                         if show && beat.is_running {
-                            value += self.oscillator.sine(beat.key * 16.0, self.tick as f32);
+                            let accent_multiplier = if accent { 2.0 } else { 1.0 };
+                            value += self
+                                .oscillator
+                                .sine(beat.key * 16.0 * accent_multiplier, self.tick as f32);
                         }
                         self.beats[i] = Some(beat);
                     }
@@ -69,7 +72,7 @@ impl App {
                 Input::Delete(i) => self.beats[i] = None,
                 Input::Create(i) => {
                     let mut new_beat =
-                        ExampleBeat::new((4, 4), 120, self.sample_rate as u32, self.channel_count);
+                        ExampleBeat::new((3, 4), 90, self.sample_rate as u32, self.channel_count);
                     new_beat.sync(self.tick);
                     self.beats[i] = Some(new_beat);
                 }
