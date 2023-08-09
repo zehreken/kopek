@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
@@ -12,6 +14,8 @@ pub struct View {
     input_producer: HeapProducer<Input>, // first is freq, second is octave
     view_consumer: HeapConsumer<ViewMessage>,
     beat_views: [Option<ExampleBeatView>; BEAT_COUNT],
+    show_modal_window: bool,
+    modal_content: ModalContent,
 }
 
 impl Default for View {
@@ -42,6 +46,8 @@ impl Default for View {
             input_producer,
             view_consumer,
             beat_views,
+            show_modal_window: false,
+            modal_content: ModalContent::default(),
         }
     }
 }
@@ -59,48 +65,68 @@ impl eframe::App for View {
                 "Sample rate: {0}Hz",
                 self.audio_model.get_sample_rate()
             ));
-            for (i, beat) in beats.iter().enumerate() {
-                if let Some(mut beat_view) = self.beat_views[i] {
-                    let (beat_count, beat_length) = beat_view.time_signature;
+            if self.show_modal_window {
+                ui.label("beat");
+                ui.add(
+                    egui::DragValue::new(&mut self.modal_content.time_signature.0)
+                        .speed(1)
+                        .clamp_range(RangeInclusive::new(1, 8)),
+                );
+                ui.label("length");
+                ui.add(
+                    egui::DragValue::new(&mut self.modal_content.time_signature.1)
+                        .speed(1)
+                        .clamp_range(RangeInclusive::new(1, 8)),
+                );
+                if ui.button("ok").clicked() {
+                    self.show_modal_window = false;
+                    // Call create
+                }
+            } else {
+                for (i, beat) in beats.iter().enumerate() {
+                    if let Some(mut beat_view) = self.beat_views[i] {
+                        let (beat_count, beat_length) = beat_view.time_signature;
 
-                    ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                        for i in 0..beat_count as u32 {
-                            if beat % 4 == i {
-                                ui.label("+ ");
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                            for i in 0..beat_count as u32 {
+                                if beat % 4 == i {
+                                    ui.label("+ ");
+                                } else {
+                                    ui.label("- ");
+                                }
+                            }
+                            if beat_view.is_running {
+                                if ui.button("■").clicked() {
+                                    dbg!("stop beat");
+                                    beat_view.is_running = false;
+                                    self.input_producer.push(Input::Toggle(i)).unwrap();
+                                }
                             } else {
-                                ui.label("- ");
+                                if ui.button("▶").clicked() {
+                                    dbg!("start beat");
+                                    beat_view.is_running = true;
+                                    self.input_producer.push(Input::Toggle(i)).unwrap();
+                                }
                             }
-                        }
-                        if beat_view.is_running {
-                            if ui.button("■").clicked() {
-                                dbg!("stop beat");
-                                beat_view.is_running = false;
-                                self.input_producer.push(Input::Toggle(i)).unwrap();
-                            }
-                        } else {
-                            if ui.button("▶").clicked() {
-                                dbg!("start beat");
-                                beat_view.is_running = true;
-                                self.input_producer.push(Input::Toggle(i)).unwrap();
-                            }
-                        }
-                        ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
+                            ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
 
-                        // You need to write it back to the array because
-                        // Since there is no reference but only data
-                        self.beat_views[i] = Some(beat_view);
-                        if ui.button("-").clicked() {
-                            self.beat_views[i] = None;
-                            self.input_producer.push(Input::Delete(i)).unwrap();
-                        }
-                    });
-                } else {
-                    ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                        if ui.button("+").clicked() {
-                            self.input_producer.push(Input::Create(i)).unwrap();
-                            self.beat_views[i] = Some(ExampleBeatView::default());
-                        }
-                    });
+                            // You need to write it back to the array because
+                            // Since there is no reference but only data
+                            self.beat_views[i] = Some(beat_view);
+                            if ui.button("-").clicked() {
+                                self.beat_views[i] = None;
+                                self.input_producer.push(Input::Delete(i)).unwrap();
+                            }
+                        });
+                    } else {
+                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                            if ui.button("+").clicked() {
+                                // self.input_producer.push(Input::Create(i)).unwrap();
+                                // self.beat_views[i] = Some(ExampleBeatView::default());
+                                self.show_modal_window = true;
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -127,6 +153,13 @@ struct ExampleBeatView {
     time_signature: (u8, u8),
     key: f32,
     is_running: bool,
+}
+
+#[derive(Default, Clone, Copy)]
+struct ModalContent {
+    time_signature: (u8, u8),
+    key: f32,
+    bpm: u16,
 }
 
 impl ExampleBeatView {
