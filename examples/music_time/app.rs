@@ -70,9 +70,9 @@ impl App {
                     }
                 }
                 Input::Delete(i) => self.beats[i] = None,
-                Input::Create(i) => {
+                Input::Create(i, time, _key, bpm) => {
                     let mut new_beat =
-                        ExampleBeat::new((3, 4), 90, self.sample_rate as u32, self.channel_count);
+                        ExampleBeat::new(time, bpm, self.sample_rate as u32, self.channel_count);
                     new_beat.sync(self.tick);
                     self.beats[i] = Some(new_beat);
                 }

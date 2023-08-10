@@ -66,21 +66,33 @@ impl eframe::App for View {
                 self.audio_model.get_sample_rate()
             ));
             if self.show_modal_window {
-                ui.label("beat");
+                ui.label("time");
                 ui.add(
                     egui::DragValue::new(&mut self.modal_content.time_signature.0)
                         .speed(1)
                         .clamp_range(RangeInclusive::new(1, 8)),
                 );
-                ui.label("length");
                 ui.add(
                     egui::DragValue::new(&mut self.modal_content.time_signature.1)
                         .speed(1)
                         .clamp_range(RangeInclusive::new(1, 8)),
                 );
+                ui.label("bpm");
+                ui.add(
+                    egui::DragValue::new(&mut self.modal_content.bpm)
+                        .speed(10)
+                        .clamp_range(RangeInclusive::new(60, 180)),
+                );
                 if ui.button("ok").clicked() {
+                    let selected = self.modal_content.selected;
+                    let time = self.modal_content.time_signature;
+                    let key = self.modal_content.key;
+                    let bpm = self.modal_content.bpm;
                     self.show_modal_window = false;
-                    // Call create
+                    self.input_producer
+                        .push(Input::Create(selected, time, key, bpm))
+                        .unwrap();
+                    self.beat_views[selected] = Some(ExampleBeatView::default());
                 }
             } else {
                 for (i, beat) in beats.iter().enumerate() {
@@ -140,7 +152,7 @@ impl eframe::App for View {
 pub enum Input {
     Toggle(usize),
     Delete(usize),
-    Create(usize),
+    Create(usize, (u8, u8), f32, u16),
 }
 
 #[derive(Debug)]
@@ -157,6 +169,7 @@ struct ExampleBeatView {
 
 #[derive(Default, Clone, Copy)]
 struct ModalContent {
+    selected: usize,
     time_signature: (u8, u8),
     key: f32,
     bpm: u16,
