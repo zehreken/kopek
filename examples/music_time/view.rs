@@ -92,16 +92,22 @@ impl eframe::App for View {
                     self.input_producer
                         .push(Input::Create(selected, time, key, bpm))
                         .unwrap();
-                    self.beat_views[selected] = Some(ExampleBeatView::default());
+                    self.beat_views[selected] = Some(ExampleBeatView {
+                        time_signature: time,
+                        key,
+                        bpm,
+                        is_running: false,
+                    });
                 }
             } else {
                 for (i, beat) in beats.iter().enumerate() {
                     if let Some(mut beat_view) = self.beat_views[i] {
                         let (beat_count, beat_length) = beat_view.time_signature;
+                        let bpm = beat_view.bpm;
 
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                             for i in 0..beat_count as u32 {
-                                if beat % 4 == i {
+                                if beat % beat_count as u32 == i {
                                     ui.label("+ ");
                                 } else {
                                     ui.label("- ");
@@ -120,7 +126,10 @@ impl eframe::App for View {
                                     self.input_producer.push(Input::Toggle(i)).unwrap();
                                 }
                             }
-                            ui.label(format!("beat {} {}/{}", i, beat_count, beat_length));
+                            ui.label(format!(
+                                "beat {} {}/{} bpm: {}",
+                                i, beat_count, beat_length, bpm
+                            ));
 
                             // You need to write it back to the array because
                             // Since there is no reference but only data
@@ -136,6 +145,7 @@ impl eframe::App for View {
                                 // self.input_producer.push(Input::Create(i)).unwrap();
                                 // self.beat_views[i] = Some(ExampleBeatView::default());
                                 self.show_modal_window = true;
+                                self.modal_content.selected = i;
                             }
                         });
                     }
@@ -164,6 +174,7 @@ pub enum ViewMessage {
 struct ExampleBeatView {
     time_signature: (u8, u8),
     key: f32,
+    bpm: u16,
     is_running: bool,
 }
 
@@ -180,6 +191,7 @@ impl ExampleBeatView {
         Self {
             time_signature: (4, 4),
             key: C_FREQ,
+            bpm: 120,
             is_running: false,
         }
     }
