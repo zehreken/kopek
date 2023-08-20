@@ -23,7 +23,7 @@ impl App {
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<ViewMessage>,
     ) -> Result<App, anyhow::Error> {
-        let example_beat = ExampleBeat::new((4, 4), 120, sample_rate as u32, channel_count);
+        let example_beat = ExampleBeat::new((4, 4), 120, C_FREQ, sample_rate as u32, channel_count);
         Ok(App {
             sample_rate,
             channel_count,
@@ -70,9 +70,14 @@ impl App {
                     }
                 }
                 Input::Delete(i) => self.beats[i] = None,
-                Input::Create(i, time, _key, bpm) => {
-                    let mut new_beat =
-                        ExampleBeat::new(time, bpm, self.sample_rate as u32, self.channel_count);
+                Input::Create(i, time, key, bpm) => {
+                    let mut new_beat = ExampleBeat::new(
+                        time,
+                        bpm,
+                        key,
+                        self.sample_rate as u32,
+                        self.channel_count,
+                    );
                     new_beat.sync(self.tick);
                     self.beats[i] = Some(new_beat);
                 }
@@ -105,10 +110,10 @@ struct ExampleBeat {
 }
 
 impl ExampleBeat {
-    pub fn new(time: (u8, u8), bpm: u16, sample_rate: u32, channel_count: u16) -> Self {
+    pub fn new(time: (u8, u8), bpm: u16, key: f32, sample_rate: u32, channel_count: u16) -> Self {
         Self {
             time_signature: TimeSignature::new(time, bpm, sample_rate, channel_count),
-            key: C_FREQ,
+            key,
             oscillation: 0,
             is_running: false,
         }

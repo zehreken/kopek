@@ -83,6 +83,8 @@ impl eframe::App for View {
                         .speed(10)
                         .clamp_range(RangeInclusive::new(60, 180)),
                 );
+                ui.label("key");
+                ui.add(egui::DragValue::new(&mut self.modal_content.key));
                 if ui.button("ok").clicked() {
                     let selected = self.modal_content.selected;
                     let time = self.modal_content.time_signature;
@@ -104,6 +106,7 @@ impl eframe::App for View {
                     if let Some(mut beat_view) = self.beat_views[i] {
                         let (beat_count, beat_length) = beat_view.time_signature;
                         let bpm = beat_view.bpm;
+                        let key = beat_view.key;
 
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                             for i in 0..beat_count as u32 {
@@ -115,20 +118,18 @@ impl eframe::App for View {
                             }
                             if beat_view.is_running {
                                 if ui.button("■").clicked() {
-                                    dbg!("stop beat");
                                     beat_view.is_running = false;
                                     self.input_producer.push(Input::Toggle(i)).unwrap();
                                 }
                             } else {
                                 if ui.button("▶").clicked() {
-                                    dbg!("start beat");
                                     beat_view.is_running = true;
                                     self.input_producer.push(Input::Toggle(i)).unwrap();
                                 }
                             }
                             ui.label(format!(
-                                "beat {} {}/{} bpm: {}",
-                                i, beat_count, beat_length, bpm
+                                "beat {} {}/{} bpm: {} key: {}",
+                                i, beat_count, beat_length, bpm, key
                             ));
 
                             // You need to write it back to the array because
