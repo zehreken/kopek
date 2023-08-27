@@ -11,7 +11,7 @@ use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 #[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
 pub struct View {
     audio_model: AudioModel,
-    input_producer: HeapProducer<Input>, // first is freq, second is octave
+    input_producer: HeapProducer<Input>,
     view_consumer: HeapConsumer<ViewMessage>,
     beat_views: [Option<ExampleBeatView>; BEAT_COUNT],
     show_modal_window: bool,
@@ -132,7 +132,7 @@ impl eframe::App for View {
                                 i, beat_count, beat_length, bpm, key
                             ));
 
-                            // You need to write it back to the array because
+                            // You need to write it back to the array
                             // Since there is no reference but only data
                             self.beat_views[i] = Some(beat_view);
                             if ui.button("-").clicked() {
@@ -143,8 +143,6 @@ impl eframe::App for View {
                     } else {
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                             if ui.button("+").clicked() {
-                                // self.input_producer.push(Input::Create(i)).unwrap();
-                                // self.beat_views[i] = Some(ExampleBeatView::default());
                                 self.show_modal_window = true;
                                 self.modal_content.selected = i;
                             }

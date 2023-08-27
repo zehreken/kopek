@@ -32,9 +32,6 @@ impl App {
             producer,
             input_consumer,
             view_producer,
-            // time_4_4: TimeSignature::new((4, 4), 120, sample_rate as u32, channel_count),
-            // time_3_4: TimeSignature::new((3, 4), 90, sample_rate as u32, channel_count),
-            // time_5_4: TimeSignature::new((5, 4), 75, sample_rate as u32, channel_count),
             beats: [Some(example_beat); BEAT_COUNT],
         })
     }
