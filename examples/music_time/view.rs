@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
-use kopek::oscillator::C_FREQ;
+use kopek::oscillator::*;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -84,7 +84,17 @@ impl eframe::App for View {
                         .clamp_range(RangeInclusive::new(60, 180)),
                 );
                 ui.label("key");
-                ui.add(egui::DragValue::new(&mut self.modal_content.key));
+                egui::ComboBox::from_label("key")
+                    .selected_text(format!("{:?}", self.modal_content.key))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut self.modal_content.key, C_FREQ, "C");
+                        ui.selectable_value(&mut self.modal_content.key, D_FREQ, "D");
+                        ui.selectable_value(&mut self.modal_content.key, E_FREQ, "E");
+                        ui.selectable_value(&mut self.modal_content.key, F_FREQ, "F");
+                        ui.selectable_value(&mut self.modal_content.key, G_FREQ, "G");
+                        ui.selectable_value(&mut self.modal_content.key, A_FREQ, "A");
+                        ui.selectable_value(&mut self.modal_content.key, B_FREQ, "B");
+                    });
                 if ui.button("ok").clicked() {
                     let selected = self.modal_content.selected;
                     let time = self.modal_content.time_signature;
