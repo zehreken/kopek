@@ -1,4 +1,4 @@
-use kopek::{oscillator::*, time_signature::TimeSignature};
+use kopek::{oscillator::*, time_signature::TimeSignature, utils::C_FREQ};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 use crate::view::{Input, ViewMessage};

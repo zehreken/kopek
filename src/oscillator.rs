@@ -1,13 +1,3 @@
-// Frequencies from this page
-// https://pages.mtu.edu/~suits/notefreqs.html
-pub const C_FREQ: f32 = 16.35;
-pub const D_FREQ: f32 = 18.35;
-pub const E_FREQ: f32 = 20.60;
-pub const F_FREQ: f32 = 21.83;
-pub const G_FREQ: f32 = 24.50;
-pub const A_FREQ: f32 = 27.50;
-pub const B_FREQ: f32 = 30.87;
-
 pub struct Oscillator {
     sample_rate: f32,
 }

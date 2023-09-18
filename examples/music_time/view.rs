@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
-use kopek::oscillator::*;
+use kopek::utils::{self, Keys, C_FREQ};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -47,7 +47,12 @@ impl Default for View {
             view_consumer,
             beat_views,
             show_modal_window: false,
-            modal_content: ModalContent::default(),
+            modal_content: ModalContent {
+                selected: 0,
+                time_signature: (4, 4),
+                key: Keys::C,
+                bpm: 120,
+            },
         }
     }
 }
@@ -87,13 +92,13 @@ impl eframe::App for View {
                 egui::ComboBox::from_label("key")
                     .selected_text(format!("{:?}", self.modal_content.key))
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut self.modal_content.key, C_FREQ, "C");
-                        ui.selectable_value(&mut self.modal_content.key, D_FREQ, "D");
-                        ui.selectable_value(&mut self.modal_content.key, E_FREQ, "E");
-                        ui.selectable_value(&mut self.modal_content.key, F_FREQ, "F");
-                        ui.selectable_value(&mut self.modal_content.key, G_FREQ, "G");
-                        ui.selectable_value(&mut self.modal_content.key, A_FREQ, "A");
-                        ui.selectable_value(&mut self.modal_content.key, B_FREQ, "B");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::C, "C");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::D, "D");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::E, "E");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::F, "F");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::G, "G");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::A, "A");
+                        ui.selectable_value(&mut self.modal_content.key, Keys::B, "B");
                     });
                 if ui.button("ok").clicked() {
                     let selected = self.modal_content.selected;
@@ -102,7 +107,7 @@ impl eframe::App for View {
                     let bpm = self.modal_content.bpm;
                     self.show_modal_window = false;
                     self.input_producer
-                        .push(Input::Create(selected, time, key, bpm))
+                        .push(Input::Create(selected, time, utils::get_freq(key), bpm))
                         .unwrap();
                     self.beat_views[selected] = Some(ExampleBeatView {
                         time_signature: time,
@@ -117,39 +122,45 @@ impl eframe::App for View {
                         let (beat_count, beat_length) = beat_view.time_signature;
                         let bpm = beat_view.bpm;
                         let key = beat_view.key;
-
-                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                            for i in 0..beat_count as u32 {
-                                if beat % beat_count as u32 == i {
-                                    ui.label("+ ");
+                        egui::Frame::none()
+                            .fill(egui::Color32::BLACK)
+                            .show(ui, |ui| {
+                                ui.with_layout(
+                                    egui::Layout::left_to_right(egui::Align::TOP),
+                                    |ui| {
+                                        for i in 0..beat_count as u32 {
+                                            if beat % beat_count as u32 == i {
+                                                ui.label("+ ");
+                                            } else {
+                                                ui.label("- ");
+                                            }
+                                        }
+                                    },
+                                );
+                                if beat_view.is_running {
+                                    if ui.button("■").clicked() {
+                                        beat_view.is_running = false;
+                                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                                    }
                                 } else {
-                                    ui.label("- ");
+                                    if ui.button("▶").clicked() {
+                                        beat_view.is_running = true;
+                                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                                    }
                                 }
-                            }
-                            if beat_view.is_running {
-                                if ui.button("■").clicked() {
-                                    beat_view.is_running = false;
-                                    self.input_producer.push(Input::Toggle(i)).unwrap();
-                                }
-                            } else {
-                                if ui.button("▶").clicked() {
-                                    beat_view.is_running = true;
-                                    self.input_producer.push(Input::Toggle(i)).unwrap();
-                                }
-                            }
-                            ui.label(format!(
-                                "beat {} {}/{} bpm: {} key: {}",
-                                i, beat_count, beat_length, bpm, key
-                            ));
+                                ui.label(format!(
+                                    "{}/{}\nbpm: {}\nkey: {:?}",
+                                    beat_count, beat_length, bpm, key
+                                ));
 
-                            // You need to write it back to the array
-                            // Since there is no reference but only data
-                            self.beat_views[i] = Some(beat_view);
-                            if ui.button("-").clicked() {
-                                self.beat_views[i] = None;
-                                self.input_producer.push(Input::Delete(i)).unwrap();
-                            }
-                        });
+                                // You need to write it back to the array
+                                // Since there is no reference but only data
+                                self.beat_views[i] = Some(beat_view);
+                                if ui.button("-").clicked() {
+                                    self.beat_views[i] = None;
+                                    self.input_producer.push(Input::Delete(i)).unwrap();
+                                }
+                            });
                     } else {
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                             if ui.button("+").clicked() {
@@ -182,16 +193,16 @@ pub enum ViewMessage {
 #[derive(Clone, Copy)]
 struct ExampleBeatView {
     time_signature: (u8, u8),
-    key: f32,
+    key: Keys,
     bpm: u16,
     is_running: bool,
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Clone, Copy)]
 struct ModalContent {
     selected: usize,
     time_signature: (u8, u8),
-    key: f32,
+    key: Keys,
     bpm: u16,
 }
 
@@ -199,7 +210,7 @@ impl ExampleBeatView {
     fn default() -> Self {
         Self {
             time_signature: (4, 4),
-            key: C_FREQ,
+            key: Keys::C,
             bpm: 120,
             is_running: false,
         }

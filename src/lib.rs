@@ -5,6 +5,7 @@ pub mod metronome;
 pub mod noise;
 pub mod oscillator;
 pub mod time_signature;
+pub mod utils;
 
 #[cfg(test)]
 mod tests {
