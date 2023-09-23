@@ -125,45 +125,44 @@ impl eframe::App for View {
                         egui::Frame::none()
                             .fill(egui::Color32::BLACK)
                             .show(ui, |ui| {
-                                ui.with_layout(
-                                    egui::Layout::left_to_right(egui::Align::TOP),
-                                    |ui| {
-                                        for i in 0..beat_count as u32 {
-                                            if beat % beat_count as u32 == i {
-                                                ui.label("+ ");
-                                            } else {
-                                                ui.label("- ");
+                                ui.group(|ui| {
+                                    ui.label(format!("{}/{}", beat_count, beat_length));
+                                    ui.with_layout(
+                                        egui::Layout::left_to_right(egui::Align::TOP),
+                                        |ui| {
+                                            for i in 0..beat_count as u32 {
+                                                if beat % beat_count as u32 == i {
+                                                    ui.label("+ ");
+                                                } else {
+                                                    ui.label("- ");
+                                                }
                                             }
+                                        },
+                                    );
+                                    if beat_view.is_running {
+                                        if ui.button("■").clicked() {
+                                            beat_view.is_running = false;
+                                            self.input_producer.push(Input::Toggle(i)).unwrap();
                                         }
-                                    },
-                                );
-                                if beat_view.is_running {
-                                    if ui.button("■").clicked() {
-                                        beat_view.is_running = false;
-                                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                                    } else {
+                                        if ui.button("▶").clicked() {
+                                            beat_view.is_running = true;
+                                            self.input_producer.push(Input::Toggle(i)).unwrap();
+                                        }
                                     }
-                                } else {
-                                    if ui.button("▶").clicked() {
-                                        beat_view.is_running = true;
-                                        self.input_producer.push(Input::Toggle(i)).unwrap();
+                                    ui.label(format!("bpm: {}\nkey: {:?}", bpm, key));
+                                    // You need to write it back to the array
+                                    // Since there is no reference but only data
+                                    self.beat_views[i] = Some(beat_view);
+                                    if ui.button("✖").clicked() {
+                                        self.beat_views[i] = None;
+                                        self.input_producer.push(Input::Delete(i)).unwrap();
                                     }
-                                }
-                                ui.label(format!(
-                                    "{}/{}\nbpm: {}\nkey: {:?}",
-                                    beat_count, beat_length, bpm, key
-                                ));
-
-                                // You need to write it back to the array
-                                // Since there is no reference but only data
-                                self.beat_views[i] = Some(beat_view);
-                                if ui.button("-").clicked() {
-                                    self.beat_views[i] = None;
-                                    self.input_producer.push(Input::Delete(i)).unwrap();
-                                }
+                                })
                             });
                     } else {
                         ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                            if ui.button("+").clicked() {
+                            if ui.button("✚").clicked() {
                                 self.show_modal_window = true;
                                 self.modal_content.selected = i;
                             }
