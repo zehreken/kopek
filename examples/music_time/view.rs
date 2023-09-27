@@ -3,7 +3,8 @@ use std::ops::RangeInclusive;
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
-use kopek::utils::{self, Keys, C_FREQ};
+use egui::{emath, epaint, pos2, vec2, Pos2, Rect, Stroke, Ui};
+use kopek::utils::{self, Keys};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -71,51 +72,53 @@ impl eframe::App for View {
                 self.audio_model.get_sample_rate()
             ));
             if self.show_modal_window {
-                ui.label("time");
-                ui.add(
-                    egui::DragValue::new(&mut self.modal_content.time_signature.0)
-                        .speed(1)
-                        .clamp_range(RangeInclusive::new(1, 8)),
-                );
-                ui.add(
-                    egui::DragValue::new(&mut self.modal_content.time_signature.1)
-                        .speed(1)
-                        .clamp_range(RangeInclusive::new(1, 8)),
-                );
-                ui.label("bpm");
-                ui.add(
-                    egui::DragValue::new(&mut self.modal_content.bpm)
-                        .speed(10)
-                        .clamp_range(RangeInclusive::new(60, 180)),
-                );
-                ui.label("key");
-                egui::ComboBox::from_label("key")
-                    .selected_text(format!("{:?}", self.modal_content.key))
-                    .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut self.modal_content.key, Keys::C, "C");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::D, "D");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::E, "E");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::F, "F");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::G, "G");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::A, "A");
-                        ui.selectable_value(&mut self.modal_content.key, Keys::B, "B");
-                    });
-                if ui.button("ok").clicked() {
-                    let selected = self.modal_content.selected;
-                    let time = self.modal_content.time_signature;
-                    let key = self.modal_content.key;
-                    let bpm = self.modal_content.bpm;
-                    self.show_modal_window = false;
-                    self.input_producer
-                        .push(Input::Create(selected, time, utils::get_freq(key), bpm))
-                        .unwrap();
-                    self.beat_views[selected] = Some(ExampleBeatView {
-                        time_signature: time,
-                        key,
-                        bpm,
-                        is_running: false,
-                    });
-                }
+                ui.group(|ui| {
+                    ui.label("time");
+                    ui.add(
+                        egui::DragValue::new(&mut self.modal_content.time_signature.0)
+                            .speed(1)
+                            .clamp_range(RangeInclusive::new(1, 8)),
+                    );
+                    ui.add(
+                        egui::DragValue::new(&mut self.modal_content.time_signature.1)
+                            .speed(1)
+                            .clamp_range(RangeInclusive::new(1, 8)),
+                    );
+                    ui.label("bpm");
+                    ui.add(
+                        egui::DragValue::new(&mut self.modal_content.bpm)
+                            .speed(10)
+                            .clamp_range(RangeInclusive::new(60, 180)),
+                    );
+                    ui.label("key");
+                    egui::ComboBox::from_label("key")
+                        .selected_text(format!("{:?}", self.modal_content.key))
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut self.modal_content.key, Keys::C, "C");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::D, "D");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::E, "E");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::F, "F");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::G, "G");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::A, "A");
+                            ui.selectable_value(&mut self.modal_content.key, Keys::B, "B");
+                        });
+                    if ui.button("ok").clicked() {
+                        let selected = self.modal_content.selected;
+                        let time = self.modal_content.time_signature;
+                        let key = self.modal_content.key;
+                        let bpm = self.modal_content.bpm;
+                        self.show_modal_window = false;
+                        self.input_producer
+                            .push(Input::Create(selected, time, utils::get_freq(key), bpm))
+                            .unwrap();
+                        self.beat_views[selected] = Some(ExampleBeatView {
+                            time_signature: time,
+                            key,
+                            bpm,
+                            is_running: false,
+                        });
+                    }
+                });
             } else {
                 for (i, beat) in beats.iter().enumerate() {
                     if let Some(mut beat_view) = self.beat_views[i] {
@@ -161,20 +164,81 @@ impl eframe::App for View {
                                 })
                             });
                     } else {
-                        ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                            if ui.button("✚").clicked() {
-                                self.show_modal_window = true;
-                                self.modal_content.selected = i;
-                            }
+                        ui.group(|ui| {
+                            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                                if ui.button("✚").clicked() {
+                                    self.show_modal_window = true;
+                                    self.modal_content.selected = i;
+                                }
+                            })
                         });
                     }
                 }
+                let mut states: [(bool, i32, i32); BEAT_COUNT] = [(false, 0, 0); BEAT_COUNT];
+                for (i, view) in self.beat_views.iter().enumerate() {
+                    if let Some(view) = view {
+                        states[i] = (true, 0, 0);
+                    } else {
+                        states[i] = (false, 0, 0);
+                    }
+                }
+                draw_graph(ctx, &states);
             }
         });
 
         ctx.request_repaint(); // Make UI continuous
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
+}
+
+fn draw_graph(ctx: &egui::Context, states: &[(bool, i32, i32); BEAT_COUNT]) {
+    egui::Window::new("cCc").show(ctx, |ui| {
+        let desired_size = ui.available_width() * vec2(1.0, 1.0);
+        let (_id, rect) = ui.allocate_space(desired_size);
+
+        let to_screen =
+            emath::RectTransform::from_to(Rect::from_x_y_ranges(-1.0..=1.0, -1.0..=1.0), rect);
+
+        let mut shapes = vec![];
+        let radi = &[1.0, 0.85, 0.70, 0.55];
+        for &radius in radi {
+            let radius = radius as f32;
+            let n = 120;
+
+            let points: Vec<Pos2> = (0..=n)
+                .map(|i| {
+                    let rad = 2.0 * std::f32::consts::PI * i as f32 / n as f32;
+                    let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
+                    p
+                })
+                .collect();
+
+            let thickness = 2.0; // 10.0 / radius as f32;
+            shapes.push(epaint::Shape::line(
+                points,
+                Stroke::new(thickness, egui::Color32::RED),
+            ));
+        }
+
+        for &radius in radi {
+            let fac = [-1_f32, 1_f32];
+            let points: Vec<Pos2> = (0..2)
+                .map(|i| {
+                    let radius = fac[i] * 0.05 + radius as f32;
+                    let rad = 2.0 * std::f32::consts::PI * i as f32 / 1 as f32;
+                    let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
+                    p
+                })
+                .collect();
+
+            let thickness = 2.0; // 10.0 / radius as f32;
+            shapes.push(epaint::Shape::line(
+                points,
+                Stroke::new(thickness, egui::Color32::WHITE),
+            ));
+        }
+        ui.painter().extend(shapes);
+    });
 }
 
 #[derive(Debug)]
