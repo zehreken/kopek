@@ -19,9 +19,9 @@ cpal = "0.15.0"
 anyhow = "1.0.35"
 audrey = "0.3.0"
 ringbuf = "0.3.2"
-egui = "0.22.0"
-eframe = "0.22.0"
-pprof = { version = "0.12", features = ["flamegraph"] }
+egui = "0.23.0"
+eframe = "0.23.0"
+pprof = { version = "0.13", features = ["flamegraph"] }
 
 [[bench]]
 name = "benchmark"
