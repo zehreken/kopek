@@ -1,4 +1,9 @@
-use kopek::{envelope::*, oscillator::*, time_signature::TimeSignature};
+use kopek::{
+    envelope::*,
+    oscillator::*,
+    time_signature::TimeSignature,
+    utils::{C_FREQ, E_FREQ, G_FREQ},
+};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 use crate::view::{Input, ViewMessage};
@@ -29,9 +34,9 @@ impl App {
             input_consumer,
             view_producer,
             envelope: Envelope::new(),
-            time_4_4: TimeSignature::new((4, 4), 120),
-            time_3_4: TimeSignature::new((3, 4), 90),
-            time_5_4: TimeSignature::new((5, 4), 75),
+            time_4_4: TimeSignature::new((4, 4), 120, 44100, 4),
+            time_3_4: TimeSignature::new((3, 4), 90, 44100, 4),
+            time_5_4: TimeSignature::new((5, 4), 75, 44100, 4),
         })
     }
 

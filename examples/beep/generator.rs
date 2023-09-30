@@ -1,5 +1,5 @@
 use crate::view::Input;
-use kopek::{noise::Noise, oscillator::*};
+use kopek::{noise::Noise, oscillator::*, utils::A_FREQ};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 pub enum OscillatorType {
