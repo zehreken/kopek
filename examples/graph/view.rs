@@ -1,9 +1,7 @@
 use super::utils::Point2;
 use eframe::egui;
-use egui::{
-    plot::{Line, Plot, PlotPoints},
-    Color32,
-};
+use egui::Color32;
+use egui_plot::{Line, Plot, PlotPoints};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -98,10 +96,6 @@ impl eframe::App for AnalysisView {
         std::time::Duration::from_secs(30)
     }
 
-    fn max_size_points(&self) -> egui::Vec2 {
-        egui::Vec2::INFINITY
-    }
-
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         // NOTE: a bright gray makes the shadows of the windows look weird.
         // We use a bit of transparency so that if the user switches on the
@@ -109,10 +103,6 @@ impl eframe::App for AnalysisView {
         egui::Color32::from_rgba_unmultiplied(12, 12, 12, 180).to_normalized_gamma_f32()
 
         // _visuals.window_fill() would also be a natural choice
-    }
-
-    fn persist_native_window(&self) -> bool {
-        true
     }
 
     fn persist_egui_memory(&self) -> bool {
