@@ -66,7 +66,7 @@ impl eframe::App for View {
                 ViewMessage::Beat(i, v) => beats[i as usize] = v,
             }
         }
-        egui::CentralPanel::default().show(ctx, |ui| {
+        egui::SidePanel::left("side").show(ctx, |ui| {
             ui.label(format!(
                 "Sample rate: {0}Hz",
                 self.audio_model.get_sample_rate()
@@ -116,6 +116,7 @@ impl eframe::App for View {
                             key,
                             bpm,
                             is_running: false,
+                            bar_length: 60.0 / bpm as f32 * time.0 as f32,
                         });
                     }
                 });
@@ -135,9 +136,9 @@ impl eframe::App for View {
                                         |ui| {
                                             for i in 0..beat_count as u32 {
                                                 if beat % beat_count as u32 == i {
-                                                    ui.label("+ ");
+                                                    ui.label("🌑 ");
                                                 } else {
-                                                    ui.label("- ");
+                                                    ui.label("🌕 ");
                                                 }
                                             }
                                         },
@@ -174,25 +175,26 @@ impl eframe::App for View {
                         });
                     }
                 }
-                let mut states: [(bool, i32, i32); BEAT_COUNT] = [(false, 0, 0); BEAT_COUNT];
-                for (i, view) in self.beat_views.iter().enumerate() {
-                    if let Some(view) = view {
-                        states[i] = (true, 0, 0);
-                    } else {
-                        states[i] = (false, 0, 0);
-                    }
-                }
-                draw_graph(ctx, &states);
             }
         });
+        let mut states: [f32; BEAT_COUNT] = [0.0; BEAT_COUNT];
+        for (i, view) in self.beat_views.iter().enumerate() {
+            if let Some(view) = view {
+                states[i] = view.bar_length;
+            } else {
+                states[i] = 0.0;
+            }
+        }
+        draw_graph(ctx, &states);
 
         ctx.request_repaint(); // Make UI continuous
-        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::thread::sleep(std::time::Duration::from_millis(16));
     }
 }
 
-fn draw_graph(ctx: &egui::Context, states: &[(bool, i32, i32); BEAT_COUNT]) {
-    egui::Window::new("cCc").show(ctx, |ui| {
+fn draw_graph(ctx: &egui::Context, states: &[f32; BEAT_COUNT]) {
+    egui::CentralPanel::default().show(ctx, |ui| {
+        let time = ui.input(|i| i.time);
         let desired_size = ui.available_width() * vec2(1.0, 1.0);
         let (_id, rect) = ui.allocate_space(desired_size);
 
@@ -213,28 +215,30 @@ fn draw_graph(ctx: &egui::Context, states: &[(bool, i32, i32); BEAT_COUNT]) {
                 })
                 .collect();
 
-            let thickness = 2.0; // 10.0 / radius as f32;
+            let thickness = 1.0; // 10.0 / radius as f32;
             shapes.push(epaint::Shape::line(
                 points,
-                Stroke::new(thickness, egui::Color32::RED),
+                Stroke::new(thickness, egui::Color32::WHITE),
             ));
         }
 
-        for &radius in radi {
-            let fac = [-1_f32, 1_f32];
+        for (k, &radius) in radi.iter().enumerate() {
+            let fac = [-0.5_f32, 0.5_f32];
             let points: Vec<Pos2> = (0..2)
                 .map(|i| {
                     let radius = fac[i] * 0.05 + radius as f32;
-                    let rad = 2.0 * std::f32::consts::PI * i as f32 / 1 as f32;
+                    let bar_length = states[k];
+                    let period = 1_f32 / bar_length;
+                    let rad = 2.0 * std::f32::consts::PI * time as f32 * period;
                     let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
                     p
                 })
                 .collect();
 
-            let thickness = 2.0; // 10.0 / radius as f32;
+            let thickness = 10.0; // 10.0 / radius as f32;
             shapes.push(epaint::Shape::line(
                 points,
-                Stroke::new(thickness, egui::Color32::WHITE),
+                Stroke::new(thickness, egui::Color32::YELLOW),
             ));
         }
         ui.painter().extend(shapes);
@@ -259,6 +263,7 @@ struct ExampleBeatView {
     key: Keys,
     bpm: u16,
     is_running: bool,
+    bar_length: f32,
 }
 
 #[derive(Clone, Copy)]
@@ -276,6 +281,7 @@ impl ExampleBeatView {
             key: Keys::C,
             bpm: 120,
             is_running: false,
+            bar_length: 60.0 / 120.0 * 4.0, // minute * bpm * beat
         }
     }
 }

@@ -2,7 +2,7 @@ use kopek::{oscillator::*, time_signature::TimeSignature, utils::C_FREQ};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 use crate::view::{Input, ViewMessage};
-pub const BEAT_COUNT: usize = 4;
+pub const BEAT_COUNT: usize = 4; // Number of time_signatures(beat)
 
 pub struct App {
     sample_rate: f32,
