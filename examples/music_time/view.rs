@@ -77,7 +77,7 @@ impl eframe::App for View {
                     ui.add(
                         egui::DragValue::new(&mut self.modal_content.time_signature.0)
                             .speed(1)
-                            .clamp_range(RangeInclusive::new(1, 8)),
+                            .clamp_range(RangeInclusive::new(1, 16)),
                     );
                     ui.add(
                         egui::DragValue::new(&mut self.modal_content.time_signature.1)
@@ -88,7 +88,7 @@ impl eframe::App for View {
                     ui.add(
                         egui::DragValue::new(&mut self.modal_content.bpm)
                             .speed(10)
-                            .clamp_range(RangeInclusive::new(60, 180)),
+                            .clamp_range(RangeInclusive::new(60, 240)),
                     );
                     ui.label("key");
                     egui::ComboBox::from_label("key")
@@ -177,12 +177,12 @@ impl eframe::App for View {
                 }
             }
         });
-        let mut states: [f32; BEAT_COUNT] = [0.0; BEAT_COUNT];
+        let mut states: [(f32, u8); BEAT_COUNT] = [(0.0, 4); BEAT_COUNT];
         for (i, view) in self.beat_views.iter().enumerate() {
             if let Some(view) = view {
-                states[i] = view.bar_length;
+                states[i] = (view.bar_length, view.time_signature.0);
             } else {
-                states[i] = 0.0;
+                states[i] = (0.0, 0);
             }
         }
         draw_graph(ctx, &states);
@@ -192,7 +192,7 @@ impl eframe::App for View {
     }
 }
 
-fn draw_graph(ctx: &egui::Context, states: &[f32; BEAT_COUNT]) {
+fn draw_graph(ctx: &egui::Context, states: &[(f32, u8); BEAT_COUNT]) {
     egui::CentralPanel::default().show(ctx, |ui| {
         let time = ui.input(|i| i.time);
         let desired_size = ui.available_width() * vec2(1.0, 1.0);
@@ -223,11 +223,26 @@ fn draw_graph(ctx: &egui::Context, states: &[f32; BEAT_COUNT]) {
         }
 
         for (k, &radius) in radi.iter().enumerate() {
+            let beat_count = states[k].1;
+            for i in 1..=beat_count {
+                let period = 1_f32 / beat_count as f32;
+                let rad = 2.0 * std::f32::consts::PI * period * i as f32;
+                let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
+
+                shapes.push(epaint::Shape::circle_stroke(
+                    p,
+                    10.0,
+                    (2.0, egui::Color32::GREEN),
+                ));
+            }
+        }
+
+        for (k, &radius) in radi.iter().enumerate() {
             let fac = [-0.5_f32, 0.5_f32];
             let points: Vec<Pos2> = (0..2)
                 .map(|i| {
                     let radius = fac[i] * 0.05 + radius as f32;
-                    let bar_length = states[k];
+                    let bar_length = states[k].0;
                     let period = 1_f32 / bar_length;
                     let rad = 2.0 * std::f32::consts::PI * time as f32 * period;
                     let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
