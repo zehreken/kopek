@@ -3,9 +3,16 @@ use std::ops::RangeInclusive;
 use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
-use egui::{emath, epaint, pos2, vec2, Pos2, Rect, Stroke, Ui};
+use egui::{emath, epaint, pos2, vec2, Color32, Pos2, Rect, Stroke, Ui};
 use kopek::utils::{self, Keys};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
+
+const COLORS: [Color32; BEAT_COUNT] = [
+    Color32::GOLD,
+    Color32::GREEN,
+    Color32::RED,
+    Color32::LIGHT_BLUE,
+];
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -128,6 +135,10 @@ impl eframe::App for View {
                         let key = beat_view.key;
                         egui::Frame::none()
                             .fill(egui::Color32::BLACK)
+                            .stroke(Stroke {
+                                width: 3.0,
+                                color: COLORS[i],
+                            })
                             .show(ui, |ui| {
                                 ui.group(|ui| {
                                     ui.label(format!("{}/{}", beat_count, beat_length));
@@ -229,11 +240,7 @@ fn draw_graph(ctx: &egui::Context, states: &[(f32, u8); BEAT_COUNT]) {
                 let rad = 2.0 * std::f32::consts::PI * period * i as f32;
                 let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
 
-                shapes.push(epaint::Shape::circle_stroke(
-                    p,
-                    10.0,
-                    (2.0, egui::Color32::GREEN),
-                ));
+                shapes.push(epaint::Shape::circle_stroke(p, 10.0, (2.0, COLORS[k])));
             }
         }
 
@@ -253,7 +260,7 @@ fn draw_graph(ctx: &egui::Context, states: &[(f32, u8); BEAT_COUNT]) {
             let thickness = 10.0; // 10.0 / radius as f32;
             shapes.push(epaint::Shape::line(
                 points,
-                Stroke::new(thickness, egui::Color32::YELLOW),
+                Stroke::new(thickness, COLORS[k]),
             ));
         }
         ui.painter().extend(shapes);
