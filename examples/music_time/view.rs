@@ -236,8 +236,8 @@ fn draw_graph(ctx: &egui::Context, states: &[(f32, u8); BEAT_COUNT]) {
         for (k, &radius) in radi.iter().enumerate() {
             let beat_count = states[k].1;
             for i in 1..=beat_count {
-                let period = 1_f32 / beat_count as f32;
-                let rad = 2.0 * std::f32::consts::PI * period * i as f32;
+                let period_per_beat = 1_f32 / beat_count as f32;
+                let rad = 2.0 * std::f32::consts::PI * period_per_beat * i as f32;
                 let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
 
                 shapes.push(epaint::Shape::circle_stroke(p, 10.0, (2.0, COLORS[k])));
@@ -245,23 +245,12 @@ fn draw_graph(ctx: &egui::Context, states: &[(f32, u8); BEAT_COUNT]) {
         }
 
         for (k, &radius) in radi.iter().enumerate() {
-            let fac = [-0.5_f32, 0.5_f32];
-            let points: Vec<Pos2> = (0..2)
-                .map(|i| {
-                    let radius = fac[i] * 0.05 + radius as f32;
-                    let bar_length = states[k].0;
-                    let period = 1_f32 / bar_length;
-                    let rad = 2.0 * std::f32::consts::PI * time as f32 * period;
-                    let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
-                    p
-                })
-                .collect();
+            let bar_length = states[k].0;
+            let freq = 1_f32 / bar_length;
+            let rad = 2.0 * std::f32::consts::PI * freq * time as f32;
+            let p = to_screen * pos2(radius * rad.cos(), radius * rad.sin());
 
-            let thickness = 10.0; // 10.0 / radius as f32;
-            shapes.push(epaint::Shape::line(
-                points,
-                Stroke::new(thickness, COLORS[k]),
-            ));
+            shapes.push(epaint::Shape::circle_filled(p, 8.0, COLORS[k]));
         }
         ui.painter().extend(shapes);
     });

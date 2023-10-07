@@ -24,7 +24,7 @@ impl Metronome {
         self.sample_count += 1;
 
         let remainder = self.sample_count % self.tick_period as u32;
-        self.show_beat = remainder > 0 && remainder < 10_000;
+        self.show_beat = remainder > 0 && remainder < 8192;
         self.beat_index = self.sample_count / self.tick_period as u32;
     }
 
