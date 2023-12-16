@@ -74,6 +74,11 @@ impl App {
             }
         }
 
+        if self.view_producer.free_len() > 0 {
+            self.view_producer
+                .push(ViewMessage::State(self.envelope.get_state()))
+                .unwrap();
+        }
         // if self.view_producer.free_len() >= 3 {
         //     self.view_producer
         //         .push(ViewMessage::Beat4_4(self.time_4_4.get_beat_index()))

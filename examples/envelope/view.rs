@@ -1,6 +1,7 @@
 use super::audio::*;
 use crate::app::App;
 use eframe::egui;
+use kopek::envelope::EnvelopeState;
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -40,11 +41,13 @@ impl eframe::App for View {
         let mut beat_4_4 = 0;
         let mut beat_3_4 = 0;
         let mut beat_5_4 = 0;
+        let mut envelope_state = EnvelopeState::Idle;
         while let Some(message) = self.view_consumer.pop() {
             match message {
                 ViewMessage::Beat4_4(v) => beat_4_4 = v,
                 ViewMessage::Beat3_4(v) => beat_3_4 = v,
                 ViewMessage::Beat5_4(v) => beat_5_4 = v,
+                ViewMessage::State(v) => envelope_state = v,
             }
         }
 
@@ -52,6 +55,7 @@ impl eframe::App for View {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
+            ui.label(format!("Envelope state: {}", envelope_state));
         });
 
         ctx.request_repaint(); // Make UI continuous
@@ -71,10 +75,8 @@ fn check_input(ctx: &egui::Context, input_producer: &mut HeapProducer<Input>) {
                 if *key == egui::Key::A {
                     if *pressed && !*repeat {
                         input_producer.push(Input::Pressed).unwrap();
-                        println!("A pressed!");
                     } else if !*pressed {
                         input_producer.push(Input::Released).unwrap();
-                        println!("A released!")
                     }
                 }
             }
@@ -91,6 +93,7 @@ pub enum Input {
 
 #[derive(Debug)]
 pub enum ViewMessage {
+    State(EnvelopeState),
     Beat4_4(u32),
     Beat3_4(u32),
     Beat5_4(u32),
