@@ -48,7 +48,7 @@ impl eframe::App for View {
             }
         }
 
-        check_input(ctx);
+        check_input(ctx, &mut self.input_producer);
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
@@ -59,7 +59,7 @@ impl eframe::App for View {
     }
 }
 
-fn check_input(ctx: &egui::Context) {
+fn check_input(ctx: &egui::Context, input_producer: &mut HeapProducer<Input>) {
     ctx.input(|i| {
         i.events.iter().for_each(|e| match e {
             egui::Event::Key {
@@ -70,8 +70,10 @@ fn check_input(ctx: &egui::Context) {
             } => {
                 if *key == egui::Key::A {
                     if *pressed && !*repeat {
+                        input_producer.push(Input::Pressed).unwrap();
                         println!("A pressed!");
                     } else if !*pressed {
+                        input_producer.push(Input::Released).unwrap();
                         println!("A released!")
                     }
                 }
@@ -83,9 +85,8 @@ fn check_input(ctx: &egui::Context) {
 
 #[derive(Debug)]
 pub enum Input {
-    Start,
-    Stop,
-    Select(u8),
+    Pressed,
+    Released,
 }
 
 #[derive(Debug)]
