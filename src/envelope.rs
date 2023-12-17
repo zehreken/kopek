@@ -1,6 +1,12 @@
-const ATTACK_DURATION: f32 = 1.0 * 44100.0 * 4.0; // Second * Sample rate
+use std::ops::RangeInclusive;
+
+const ATTACK_DURATION: f32 = 1.0 * 44100.0 * 4.0; // Second * Sample rate * channel count
 const DECAY_DURATION: f32 = 1.0 * 44100.0 * 4.0;
 const RELEASE_DURATION: f32 = 2.0 * 44100.0 * 4.0;
+
+const ATTACK_RANGE: RangeInclusive<f32> = 0.0..=1.0;
+const DECAY_RANGE: RangeInclusive<f32> = 1.0..=0.8;
+const RELEASE_RANGE: RangeInclusive<f32> = 0.8..=0.0;
 
 pub struct Envelope {
     state: EnvelopeState,
@@ -24,13 +30,13 @@ impl Envelope {
             }
             EnvelopeState::Attack => (),
             EnvelopeState::Decay => {
-                let current_time_in_state = self.tick / DECAY_DURATION;
-                self.tick = current_time_in_state * ATTACK_DURATION;
+                self.tick = reverse_volume(*ATTACK_RANGE.start(), *ATTACK_RANGE.end(), self.volume)
+                    * ATTACK_DURATION;
             }
             EnvelopeState::Sustain => (),
             EnvelopeState::Release => {
-                let current_time_in_state = self.tick / RELEASE_DURATION;
-                self.tick = current_time_in_state * ATTACK_DURATION;
+                self.tick = reverse_volume(*ATTACK_RANGE.start(), *ATTACK_RANGE.end(), self.volume)
+                    * ATTACK_DURATION;
             }
         }
         self.state = EnvelopeState::Attack;
@@ -46,7 +52,11 @@ impl Envelope {
             EnvelopeState::Attack => {
                 // println!("Attack");
                 self.tick += 1.0;
-                self.volume = lerp(0.0, 1.0, self.tick / ATTACK_DURATION);
+                self.volume = lerp(
+                    *ATTACK_RANGE.start(),
+                    *ATTACK_RANGE.end(),
+                    self.tick / ATTACK_DURATION,
+                );
                 if self.tick >= ATTACK_DURATION {
                     self.tick = 0.0;
                     self.state = EnvelopeState::Decay
@@ -55,7 +65,11 @@ impl Envelope {
             EnvelopeState::Decay => {
                 // println!("Decay");
                 self.tick += 1.0;
-                self.volume = lerp(1.0, 0.8, self.tick / DECAY_DURATION);
+                self.volume = lerp(
+                    *DECAY_RANGE.start(),
+                    *DECAY_RANGE.end(),
+                    self.tick / DECAY_DURATION,
+                );
                 if self.tick >= DECAY_DURATION {
                     self.tick = 0.0;
                     self.state = EnvelopeState::Release;
@@ -66,7 +80,11 @@ impl Envelope {
             }
             EnvelopeState::Release => {
                 // println!("Release");
-                self.volume = lerp(0.8, 0.0, self.tick / RELEASE_DURATION);
+                self.volume = lerp(
+                    *RELEASE_RANGE.start(),
+                    *RELEASE_RANGE.end(),
+                    self.tick / RELEASE_DURATION,
+                );
                 self.tick += 1.0;
                 if self.tick >= RELEASE_DURATION {
                     self.state = EnvelopeState::Idle;
@@ -93,6 +111,13 @@ impl Envelope {
 
 fn lerp(v0: f32, v1: f32, t: f32) -> f32 {
     return v0 + t * (v1 - v0);
+}
+
+// Find a better name
+// This function returns t based on the value in the range
+// Kind of reverse of the lerp function above
+fn reverse_volume(v0: f32, v1: f32, current: f32) -> f32 {
+    return (current - v0) / (v1 - v0);
 }
 
 // Envelope is a basic state machine
