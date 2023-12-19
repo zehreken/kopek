@@ -1,9 +1,5 @@
 use std::ops::RangeInclusive;
 
-const ATTACK_DURATION: f32 = 1.0 * 44100.0 * 4.0; // Second * Sample rate * channel count
-const DECAY_DURATION: f32 = 1.0 * 44100.0 * 4.0;
-const RELEASE_DURATION: f32 = 2.0 * 44100.0 * 4.0;
-
 const ATTACK_RANGE: RangeInclusive<f32> = 0.0..=1.0;
 const DECAY_RANGE: RangeInclusive<f32> = 1.0..=0.8;
 const RELEASE_RANGE: RangeInclusive<f32> = 0.8..=0.0;
@@ -12,14 +8,21 @@ pub struct Envelope {
     state: EnvelopeState,
     volume: f32,
     tick: f32,
+    attack_duration: f32,
+    decay_duration: f32,
+    release_duration: f32,
 }
 
 impl Envelope {
-    pub fn new() -> Self {
+    pub fn new(sample_rate: f32, channel_count: u8) -> Self {
+        let samples_per_second = sample_rate * channel_count as f32;
         Self {
             state: EnvelopeState::Idle,
             volume: 0.0,
             tick: 0.0,
+            attack_duration: 1.0 * samples_per_second,
+            decay_duration: 1.0 * samples_per_second,
+            release_duration: 2.0 * samples_per_second,
         }
     }
 
@@ -31,12 +34,12 @@ impl Envelope {
             EnvelopeState::Attack => (),
             EnvelopeState::Decay => {
                 self.tick = reverse_volume(*ATTACK_RANGE.start(), *ATTACK_RANGE.end(), self.volume)
-                    * ATTACK_DURATION;
+                    * self.attack_duration;
             }
             EnvelopeState::Sustain => (),
             EnvelopeState::Release => {
                 self.tick = reverse_volume(*ATTACK_RANGE.start(), *ATTACK_RANGE.end(), self.volume)
-                    * ATTACK_DURATION;
+                    * self.attack_duration;
             }
         }
         self.state = EnvelopeState::Attack;
@@ -55,9 +58,9 @@ impl Envelope {
                 self.volume = lerp(
                     *ATTACK_RANGE.start(),
                     *ATTACK_RANGE.end(),
-                    self.tick / ATTACK_DURATION,
+                    self.tick / self.attack_duration,
                 );
-                if self.tick >= ATTACK_DURATION {
+                if self.tick >= self.attack_duration {
                     self.tick = 0.0;
                     self.state = EnvelopeState::Decay
                 }
@@ -68,9 +71,9 @@ impl Envelope {
                 self.volume = lerp(
                     *DECAY_RANGE.start(),
                     *DECAY_RANGE.end(),
-                    self.tick / DECAY_DURATION,
+                    self.tick / self.decay_duration,
                 );
-                if self.tick >= DECAY_DURATION {
+                if self.tick >= self.decay_duration {
                     self.tick = 0.0;
                     self.state = EnvelopeState::Release;
                 }
@@ -83,10 +86,10 @@ impl Envelope {
                 self.volume = lerp(
                     *RELEASE_RANGE.start(),
                     *RELEASE_RANGE.end(),
-                    self.tick / RELEASE_DURATION,
+                    self.tick / self.release_duration,
                 );
                 self.tick += 1.0;
-                if self.tick >= RELEASE_DURATION {
+                if self.tick >= self.release_duration {
                     self.state = EnvelopeState::Idle;
                 }
             }

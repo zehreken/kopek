@@ -27,14 +27,13 @@ impl App {
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<ViewMessage>,
     ) -> Result<App, anyhow::Error> {
-        let mut envelope = Envelope::new();
         Ok(App {
             tick: 0.0,
             oscillator: Oscillator::new(sample_rate),
             producer,
             input_consumer,
             view_producer,
-            envelope: Envelope::new(),
+            envelope: Envelope::new(44100.0, 4),
             time_4_4: TimeSignature::new((4, 4), 120, 44100, 4),
             time_3_4: TimeSignature::new((3, 4), 90, 44100, 4),
             time_5_4: TimeSignature::new((5, 4), 75, 44100, 4),
@@ -47,7 +46,7 @@ impl App {
                 let mut value = 0.0;
                 // let (show_4_4, accent) = self.time_4_4.update();
                 // if show_4_4 {
-                value += self.oscillator.sine(C_FREQ * 8.0, self.tick);
+                value += self.oscillator.sine(C_FREQ * 4.0, self.tick);
                 // }
 
                 value *= self.envelope.update();
