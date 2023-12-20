@@ -55,6 +55,7 @@ impl eframe::App for View {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label(format!("Sample rate: {0}Hz", self.audio_model.sample_rate));
+            ui.label(format!("Channels: {0}", self.audio_model.channel_count));
             ui.label(format!("Envelope state: {}", envelope_state));
         });
 

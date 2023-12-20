@@ -18,6 +18,7 @@ const LATENCY_MS: f32 = 10.0;
 
 pub struct AudioModel {
     pub sample_rate: f32,
+    pub channel_count: u16,
     output_stream: Stream,
 }
 
@@ -81,6 +82,7 @@ impl AudioModel {
 
         Ok(AudioModel {
             sample_rate: config.sample_rate.0 as f32,
+            channel_count: config.channels,
             output_stream,
         })
     }
