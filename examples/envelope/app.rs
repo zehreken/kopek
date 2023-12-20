@@ -23,6 +23,7 @@ pub struct App {
 impl App {
     pub fn new(
         sample_rate: f32,
+        channel_count: u16,
         producer: HeapProducer<f32>,
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<ViewMessage>,
@@ -33,7 +34,7 @@ impl App {
             producer,
             input_consumer,
             view_producer,
-            envelope: Envelope::new(44100.0, 4),
+            envelope: Envelope::new(sample_rate, channel_count),
             time_4_4: TimeSignature::new((4, 4), 120, 44100, 4),
             time_3_4: TimeSignature::new((3, 4), 90, 44100, 4),
             time_5_4: TimeSignature::new((5, 4), 75, 44100, 4),

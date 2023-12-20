@@ -86,6 +86,14 @@ impl AudioModel {
             output_stream,
         })
     }
+
+    pub fn get_sample_rate(&self) -> f32 {
+        self.sample_rate
+    }
+
+    pub fn get_channel_count(&self) -> u16 {
+        self.channel_count
+    }
 }
 
 fn err_fn(err: cpal::StreamError) {

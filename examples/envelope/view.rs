@@ -22,7 +22,14 @@ impl Default for View {
         let view_ring = HeapRb::new(100);
         let (view_producer, view_consumer) = view_ring.split();
         let audio_model = AudioModel::new(consumer).unwrap();
-        let mut app = App::new(44100.0, producer, input_consumer, view_producer).unwrap();
+        let mut app = App::new(
+            audio_model.get_sample_rate(),
+            audio_model.get_channel_count(),
+            producer,
+            input_consumer,
+            view_producer,
+        )
+        .unwrap();
         let _ = std::thread::Builder::new()
             .name("app".to_string())
             .spawn(move || loop {

@@ -14,7 +14,7 @@ pub struct Envelope {
 }
 
 impl Envelope {
-    pub fn new(sample_rate: f32, channel_count: u8) -> Self {
+    pub fn new(sample_rate: f32, channel_count: u16) -> Self {
         let samples_per_second = sample_rate * channel_count as f32;
         Self {
             state: EnvelopeState::Idle,
