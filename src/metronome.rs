@@ -20,8 +20,8 @@ impl Metronome {
     }
 
     // update should be called from the audio thread and while processing the samples
-    pub fn update(&mut self) {
-        self.sample_count += 1;
+    pub fn update(&mut self, elapsed_samples: u32) {
+        self.sample_count = elapsed_samples;
 
         let remainder = self.sample_count % self.tick_period as u32;
         self.show_beat = remainder > 0 && remainder < 8192;
@@ -36,11 +36,5 @@ impl Metronome {
     // Used to make a sound or visualize
     pub fn show_beat(&self) -> bool {
         self.show_beat
-    }
-
-    // This is to sync the metronome with the app, if the metronome is created
-    // after the app has started
-    pub fn sync(&mut self, elapsed_samples: u32) {
-        self.sample_count = elapsed_samples;
     }
 }

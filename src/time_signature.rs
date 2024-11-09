@@ -16,8 +16,8 @@ impl TimeSignature {
         Self { time, metronome }
     }
 
-    pub fn update(&mut self) -> (bool, bool) {
-        self.metronome.update();
+    pub fn update(&mut self, elapsed_samples: u32) -> (bool, bool) {
+        self.metronome.update(elapsed_samples);
 
         (
             self.metronome.show_beat(),                                // beat
@@ -27,9 +27,5 @@ impl TimeSignature {
 
     pub fn get_beat_index(&self) -> u32 {
         self.metronome.get_beat_index()
-    }
-
-    pub fn sync(&mut self, elapsed_samples: u32) {
-        self.metronome.sync(elapsed_samples);
     }
 }
