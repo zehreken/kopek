@@ -19,7 +19,7 @@ impl Metronome {
         }
     }
 
-    // update should be called from the audio thread and while processing the samples
+    // update can be called from the main thread
     pub fn update(&mut self, elapsed_samples: u32) {
         self.sample_count = elapsed_samples;
 

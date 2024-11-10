@@ -7,8 +7,8 @@ impl Oscillator {
         Self { sample_rate }
     }
 
-    pub fn sine(&self, freq: f32, tick: f32) -> f32 {
-        (tick * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin()
+    pub fn sine(&self, freq: f32, tick: u32) -> f32 {
+        (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin()
     }
 
     pub fn sawtooth(&self, freq: f32, tick: f32) -> f32 {
