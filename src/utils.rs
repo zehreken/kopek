@@ -7,6 +7,7 @@ pub const F_FREQ: f32 = 21.83;
 pub const G_FREQ: f32 = 24.50;
 pub const A_FREQ: f32 = 27.50;
 pub const B_FREQ: f32 = 30.87;
+pub const REST: f32 = 0.0;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Keys {
