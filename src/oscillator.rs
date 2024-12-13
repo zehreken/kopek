@@ -11,16 +11,16 @@ impl Oscillator {
         (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin()
     }
 
-    pub fn sawtooth(&self, freq: f32, tick: f32) -> f32 {
+    pub fn sawtooth(&self, freq: f32, tick: u32) -> f32 {
         let freq_incr = freq / self.sample_rate;
-        let phase: f32 = (tick * freq_incr) % 1.0;
+        let phase: f32 = (tick as f32 * freq_incr) % 1.0;
         let value = (phase - phase.floor()) - 0.5;
 
         value
     }
 
-    pub fn square(&self, freq: f32, tick: f32) -> f32 {
-        let value = (tick * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin();
+    pub fn square(&self, freq: f32, tick: u32) -> f32 {
+        let value = (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin();
         if value > 0.0 {
             0.5
         } else {
@@ -28,9 +28,9 @@ impl Oscillator {
         }
     }
 
-    pub fn triangle(&self, freq: f32, tick: f32) -> f32 {
+    pub fn triangle(&self, freq: f32, tick: u32) -> f32 {
         let freq_incr = freq / self.sample_rate;
-        let phase: f32 = (tick * freq_incr) % 1.0;
+        let phase: f32 = (tick as f32 * freq_incr) % 1.0;
         let value = 1.0 - 4.0 * (phase - 0.5).abs();
 
         value
