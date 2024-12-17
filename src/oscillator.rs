@@ -19,9 +19,10 @@ impl Oscillator {
         value
     }
 
-    pub fn square(&self, freq: f32, tick: u32) -> f32 {
+    // duty is between 0 and 1
+    pub fn square(&self, freq: f32, tick: u32, duty: f32) -> f32 {
         let value = (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin();
-        if value > 0.0 {
+        if value > duty - 0.5 {
             0.5
         } else {
             -0.5
