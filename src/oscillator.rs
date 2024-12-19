@@ -1,6 +1,7 @@
 pub struct Oscillator {
     sample_rate: f32,
     frequency: f32,
+    wave_type: WaveType,
 }
 
 impl Oscillator {
@@ -8,6 +9,7 @@ impl Oscillator {
         Self {
             sample_rate,
             frequency: 440.0,
+            wave_type: WaveType::Sine,
         }
     }
 
@@ -16,15 +18,24 @@ impl Oscillator {
     }
 
     pub fn set_wave_type(&mut self, wave_type: WaveType) {
-        todo!()
+        self.wave_type = wave_type;
+    }
+
+    pub fn run(&self, tick: u32) -> f32 {
+        match self.wave_type {
+            WaveType::Sine => self.sine(tick),
+            WaveType::Sawtooth => self.sawtooth(tick),
+            WaveType::Square { duty } => self.square(tick, duty),
+            WaveType::Triangle => self.triangle(tick),
+        }
     }
 
     pub fn sine(&self, tick: u32) -> f32 {
         (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin()
     }
 
-    pub fn sawtooth(&self, freq: f32, tick: u32) -> f32 {
-        let freq_incr = freq / self.sample_rate;
+    pub fn sawtooth(&self, tick: u32) -> f32 {
+        let freq_incr = self.frequency / self.sample_rate;
         let phase: f32 = (tick as f32 * freq_incr) % 1.0;
         let value = (phase - phase.floor()) - 0.5;
 
@@ -32,8 +43,9 @@ impl Oscillator {
     }
 
     // duty is between 0 and 1
-    pub fn square(&self, freq: f32, tick: u32, duty: f32) -> f32 {
-        let value = (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin();
+    pub fn square(&self, tick: u32, duty: f32) -> f32 {
+        let value =
+            (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin();
         if value > duty - 0.5 {
             0.5
         } else {
@@ -41,8 +53,8 @@ impl Oscillator {
         }
     }
 
-    pub fn triangle(&self, freq: f32, tick: u32) -> f32 {
-        let freq_incr = freq / self.sample_rate;
+    pub fn triangle(&self, tick: u32) -> f32 {
+        let freq_incr = self.frequency / self.sample_rate;
         let phase: f32 = (tick as f32 * freq_incr) % 1.0;
         let value = 1.0 - 4.0 * (phase - 0.5).abs();
 
@@ -53,7 +65,7 @@ impl Oscillator {
 pub enum WaveType {
     Sine,
     Sawtooth,
-    Square,
+    Square { duty: f32 },
     Triangle,
 }
 
