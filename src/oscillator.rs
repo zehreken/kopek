@@ -1,14 +1,26 @@
 pub struct Oscillator {
     sample_rate: f32,
+    frequency: f32,
 }
 
 impl Oscillator {
     pub fn new(sample_rate: f32) -> Self {
-        Self { sample_rate }
+        Self {
+            sample_rate,
+            frequency: 440.0,
+        }
     }
 
-    pub fn sine(&self, freq: f32, tick: u32) -> f32 {
-        (tick as f32 * 2.0 * std::f32::consts::PI * freq / self.sample_rate).sin()
+    pub fn set_frequency(&mut self, frequency: f32) {
+        self.frequency = frequency;
+    }
+
+    pub fn set_wave_type(&mut self, wave_type: WaveType) {
+        todo!()
+    }
+
+    pub fn sine(&self, tick: u32) -> f32 {
+        (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin()
     }
 
     pub fn sawtooth(&self, freq: f32, tick: u32) -> f32 {
@@ -36,6 +48,13 @@ impl Oscillator {
 
         value
     }
+}
+
+pub enum WaveType {
+    Sine,
+    Sawtooth,
+    Square,
+    Triangle,
 }
 
 // This is AI generated code
