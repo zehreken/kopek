@@ -2,6 +2,7 @@ pub struct Oscillator {
     sample_rate: f32,
     frequency: f32,
     wave_type: WaveType,
+    phase: f32,
 }
 
 impl Oscillator {
@@ -10,6 +11,7 @@ impl Oscillator {
             sample_rate,
             frequency: 440.0,
             wave_type: WaveType::Sine,
+            phase: 0.0,
         }
     }
 
@@ -21,9 +23,10 @@ impl Oscillator {
         self.wave_type = wave_type;
     }
 
-    pub fn run(&self, tick: u32) -> f32 {
+    pub fn run(&mut self, tick: u32) -> f32 {
         match self.wave_type {
-            WaveType::Sine => self.sine(tick),
+            // WaveType::Sine => self.sine(tick),
+            WaveType::Sine => self.sine_two(),
             WaveType::Sawtooth => self.sawtooth(tick),
             WaveType::Square { duty } => self.square(tick, duty),
             WaveType::Triangle => self.triangle(tick),
@@ -32,6 +35,13 @@ impl Oscillator {
 
     pub fn sine(&self, tick: u32) -> f32 {
         (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin()
+    }
+
+    pub fn sine_two(&mut self) -> f32 {
+        let value = self.phase.sin();
+        let phase_increment = 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate;
+        self.phase += phase_increment % (2.0 * std::f32::consts::PI);
+        value
     }
 
     pub fn sawtooth(&self, tick: u32) -> f32 {
