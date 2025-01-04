@@ -25,19 +25,14 @@ impl Oscillator {
 
     pub fn run(&mut self, tick: u32) -> f32 {
         match self.wave_type {
-            // WaveType::Sine => self.sine(tick),
-            WaveType::Sine => self.sine_two(),
+            WaveType::Sine => self.sine(),
             WaveType::Sawtooth => self.sawtooth(tick),
             WaveType::Square { duty } => self.square(tick, duty),
             WaveType::Triangle => self.triangle(tick),
         }
     }
 
-    pub fn sine(&self, tick: u32) -> f32 {
-        (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin()
-    }
-
-    pub fn sine_two(&mut self) -> f32 {
+    pub fn sine(&mut self) -> f32 {
         let value = self.phase.sin();
         let phase_increment = 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate;
         self.phase += phase_increment % (2.0 * std::f32::consts::PI);
