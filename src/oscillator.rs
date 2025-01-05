@@ -23,45 +23,47 @@ impl Oscillator {
         self.wave_type = wave_type;
     }
 
-    pub fn run(&mut self, tick: u32) -> f32 {
+    pub fn run(&mut self) -> f32 {
         match self.wave_type {
             WaveType::Sine => self.sine(),
-            WaveType::Sawtooth => self.sawtooth(tick),
-            WaveType::Square { duty } => self.square(tick, duty),
-            WaveType::Triangle => self.triangle(tick),
+            WaveType::Sawtooth => self.sawtooth(),
+            WaveType::Square { duty } => self.square(duty),
+            WaveType::Triangle => self.triangle(),
         }
     }
 
     pub fn sine(&mut self) -> f32 {
         let value = self.phase.sin();
         let phase_increment = 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate;
-        self.phase += phase_increment % (2.0 * std::f32::consts::PI);
+        self.phase = (self.phase + phase_increment) % (2.0 * std::f32::consts::PI);
+
         value
     }
 
-    pub fn sawtooth(&self, tick: u32) -> f32 {
-        let freq_incr = self.frequency / self.sample_rate;
-        let phase: f32 = (tick as f32 * freq_incr) % 1.0;
-        let value = (phase - phase.floor()) - 0.5;
+    pub fn sawtooth(&mut self) -> f32 {
+        let normalized_phase = self.phase / (2.0 * std::f32::consts::PI);
+        let value = 2.0 * normalized_phase - 1.0;
+        let phase_increment = 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate;
+        self.phase = (self.phase + phase_increment) % (2.0 * std::f32::consts::PI);
 
         value
     }
 
     // duty is between 0 and 1
-    pub fn square(&self, tick: u32, duty: f32) -> f32 {
-        let value =
-            (tick as f32 * 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate).sin();
-        if value > duty - 0.5 {
-            0.5
-        } else {
-            -0.5
-        }
+    pub fn square(&mut self, duty: f32) -> f32 {
+        let duty = duty.clamp(0.0, 1.0);
+        let value = if self.phase < duty { 0.5 } else { -0.5 };
+
+        let phase_increment = self.frequency / self.sample_rate;
+        self.phase = (self.phase + phase_increment).fract();
+
+        value
     }
 
-    pub fn triangle(&self, tick: u32) -> f32 {
-        let freq_incr = self.frequency / self.sample_rate;
-        let phase: f32 = (tick as f32 * freq_incr) % 1.0;
-        let value = 1.0 - 4.0 * (phase - 0.5).abs();
+    pub fn triangle(&mut self) -> f32 {
+        let value = 1.0 - 4.0 * (self.phase - 0.5).abs();
+        let phase_increment = self.frequency / self.sample_rate;
+        self.phase = (self.phase + phase_increment).fract();
 
         value
     }
