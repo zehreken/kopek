@@ -15,8 +15,16 @@ impl Oscillator {
         }
     }
 
+    pub fn get_frequency(&self) -> f32 {
+        self.frequency
+    }
+
     pub fn set_frequency(&mut self, frequency: f32) {
         self.frequency = frequency;
+    }
+
+    pub fn get_wave_type(&self) -> WaveType {
+        self.wave_type
     }
 
     pub fn set_wave_type(&mut self, wave_type: WaveType) {
@@ -69,6 +77,7 @@ impl Oscillator {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum WaveType {
     Sine,
     Sawtooth,
