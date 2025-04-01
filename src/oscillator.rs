@@ -77,7 +77,7 @@ impl Oscillator {
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WaveType {
     Sine,
     Sawtooth,
