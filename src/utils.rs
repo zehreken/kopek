@@ -1,11 +1,16 @@
 // Frequencies from this page
-// https://pages.mtu.edu/~suits/notefreqs.html
+// https://gist.github.com/nvictor/7b4ab7070e210bc1306356f037226dd9
 pub const C_FREQ: f32 = 16.35;
+pub const CS_FREQ: f32 = 17.32;
 pub const D_FREQ: f32 = 18.35;
+pub const DS_FREQ: f32 = 19.45;
 pub const E_FREQ: f32 = 20.60;
 pub const F_FREQ: f32 = 21.83;
+pub const FS_FREQ: f32 = 23.12;
 pub const G_FREQ: f32 = 24.50;
+pub const GS_FREQ: f32 = 25.96;
 pub const A_FREQ: f32 = 27.50;
+pub const AS_FREQ: f32 = 29.14;
 pub const B_FREQ: f32 = 30.87;
 pub const REST: f32 = 0.0;
 
