@@ -15,24 +15,36 @@ pub const B_FREQ: f32 = 30.87;
 pub const REST: f32 = 0.0;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Keys {
+pub enum Key {
     C,
+    Cs,
     D,
+    Ds,
     E,
     F,
+    Fs,
     G,
+    Gs,
     A,
+    As,
     B,
+    Rest,
 }
 
-pub fn get_freq(key: Keys) -> f32 {
+pub fn get_freq(key: Key) -> f32 {
     match key {
-        Keys::C => C_FREQ,
-        Keys::D => D_FREQ,
-        Keys::E => E_FREQ,
-        Keys::F => F_FREQ,
-        Keys::G => G_FREQ,
-        Keys::A => A_FREQ,
-        Keys::B => B_FREQ,
+        Key::C => C_FREQ,
+        Key::Cs => CS_FREQ,
+        Key::D => D_FREQ,
+        Key::Ds => DS_FREQ,
+        Key::E => E_FREQ,
+        Key::F => F_FREQ,
+        Key::Fs => FS_FREQ,
+        Key::G => G_FREQ,
+        Key::Gs => GS_FREQ,
+        Key::A => A_FREQ,
+        Key::As => AS_FREQ,
+        Key::B => B_FREQ,
+        Key::Rest => REST,
     }
 }
