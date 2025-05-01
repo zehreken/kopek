@@ -9,7 +9,7 @@ impl Oscillator {
     pub fn new(sample_rate: f32) -> Self {
         Self {
             sample_rate,
-            frequency: 440.0,
+            frequency: 0.0,
             wave_type: WaveType::Sine,
             phase: 0.0,
         }
@@ -32,6 +32,9 @@ impl Oscillator {
     }
 
     pub fn run(&mut self) -> f32 {
+        if self.frequency < f32::EPSILON {
+            return 0.0;
+        }
         match self.wave_type {
             WaveType::Sine => self.sine(),
             WaveType::Sawtooth => self.sawtooth(),
