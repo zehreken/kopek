@@ -53,7 +53,7 @@ impl Display for Key {
     }
 }
 
-pub fn get_freq(key: Key) -> f32 {
+pub fn key_to_frequency(key: Key) -> f32 {
     match key {
         Key::C => C_FREQ,
         Key::Cs => CS_FREQ,
