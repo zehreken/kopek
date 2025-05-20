@@ -38,7 +38,8 @@ impl App {
         for _ in 0..1024 {
             if !self.producer.is_full() {
                 let mut value = 0.0;
-                value += self.oscillator.sine(C_FREQ * 4.0, self.tick);
+                self.oscillator.set_frequency(C_FREQ * 4.0);
+                value += self.oscillator.sine();
 
                 value *= self.envelope.update();
 
