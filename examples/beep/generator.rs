@@ -54,10 +54,10 @@ impl Generator {
             if self.is_running && !self.producer.is_full() {
                 self.oscillator.set_frequency(self.freq);
                 let mut value = match self.oscillator_type {
-                    OscillatorType::Sine => self.oscillator.sine(self.tick),
-                    OscillatorType::Sawtooth => self.oscillator.sawtooth(self.tick),
-                    OscillatorType::Square => self.oscillator.square(self.tick, 0.0),
-                    OscillatorType::Triangle => self.oscillator.triangle(self.tick),
+                    OscillatorType::Sine => self.oscillator.sine(),
+                    OscillatorType::Sawtooth => self.oscillator.sawtooth(),
+                    OscillatorType::Square => self.oscillator.square(0.5),
+                    OscillatorType::Triangle => self.oscillator.triangle(),
                 };
                 value += match self.noise_type {
                     NoiseType::None => 0.0,

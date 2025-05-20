@@ -63,7 +63,7 @@ impl Oscillator {
     // duty is between 0 and 1
     pub fn square(&mut self, duty: f32) -> f32 {
         let duty = duty.clamp(0.0, 1.0);
-        let value = if self.phase < duty { 0.5 } else { -0.5 };
+        let value = if self.phase < duty { 1.0 } else { -1.0 };
 
         let phase_increment = self.frequency / self.sample_rate;
         self.phase = (self.phase + phase_increment).fract();
