@@ -116,7 +116,7 @@ impl eframe::App for View {
                         let bpm = self.modal_content.bpm;
                         self.show_modal_window = false;
                         self.input_producer
-                            .push(Input::Create(selected, time, utils::get_freq(key), bpm))
+                            .push(Input::Create(selected, time, utils::freq(key), bpm))
                             .unwrap();
                         self.beat_views[selected] = Some(ExampleBeatView {
                             time_signature: time,

@@ -29,7 +29,7 @@ impl Metronome {
     }
 
     // Current number of beats played, similar to elapsed time
-    pub fn get_beat_index(&self) -> u32 {
+    pub fn beat_index(&self) -> u32 {
         self.beat_index
     }
 

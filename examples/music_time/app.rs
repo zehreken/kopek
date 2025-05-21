@@ -88,7 +88,7 @@ impl App {
                     self.view_producer
                         .push(ViewMessage::Beat(
                             beat_index,
-                            beat.time_signature.get_beat_index(),
+                            beat.time_signature.beat_index(),
                         ))
                         .unwrap();
                     beat_index += 1;

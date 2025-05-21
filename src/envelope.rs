@@ -99,7 +99,7 @@ impl Envelope {
         self.volume
     }
 
-    pub fn get_state(&self) -> EnvelopeState {
+    pub fn state(&self) -> EnvelopeState {
         self.state
     }
 

@@ -15,7 +15,7 @@ impl Oscillator {
         }
     }
 
-    pub fn get_frequency(&self) -> f32 {
+    pub fn frequency(&self) -> f32 {
         self.frequency
     }
 
@@ -23,7 +23,7 @@ impl Oscillator {
         self.frequency = frequency;
     }
 
-    pub fn get_wave_type(&self) -> WaveType {
+    pub fn wave_type(&self) -> WaveType {
         self.wave_type
     }
 

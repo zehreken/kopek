@@ -20,12 +20,12 @@ impl TimeSignature {
         self.metronome.update(elapsed_samples);
 
         (
-            self.metronome.show_beat(),                                // beat
-            self.metronome.get_beat_index() % self.time.0 as u32 == 0, // accent
+            self.metronome.show_beat(),                            // beat
+            self.metronome.beat_index() % self.time.0 as u32 == 0, // accent
         )
     }
 
-    pub fn get_beat_index(&self) -> u32 {
-        self.metronome.get_beat_index()
+    pub fn beat_index(&self) -> u32 {
+        self.metronome.beat_index()
     }
 }

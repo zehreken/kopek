@@ -26,7 +26,7 @@ mod tests {
     #[test]
     fn get_duration_in_seconds_test() {
         let frames = decode(PATH);
-        assert_eq!(2, get_duration_in_seconds(frames))
+        assert_eq!(2, duration_in_seconds(frames))
     }
 
     #[test]
