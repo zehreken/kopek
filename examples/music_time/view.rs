@@ -4,7 +4,7 @@ use super::audio::*;
 use crate::app::{App, BEAT_COUNT};
 use eframe::egui;
 use egui::{emath, epaint, pos2, vec2, Color32, Pos2, Rect, Stroke, Ui};
-use kopek::utils::{self, Keys};
+use kopek::utils::{self, Key};
 use ringbuf::{HeapConsumer, HeapProducer, HeapRb};
 
 const COLORS: [Color32; BEAT_COUNT] = [
@@ -58,7 +58,7 @@ impl Default for View {
             modal_content: ModalContent {
                 selected: 0,
                 time_signature: (4, 4),
-                key: Keys::C,
+                key: Key::C,
                 bpm: 120,
             },
         }
@@ -101,13 +101,13 @@ impl eframe::App for View {
                     egui::ComboBox::from_label("key")
                         .selected_text(format!("{:?}", self.modal_content.key))
                         .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut self.modal_content.key, Keys::C, "C");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::D, "D");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::E, "E");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::F, "F");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::G, "G");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::A, "A");
-                            ui.selectable_value(&mut self.modal_content.key, Keys::B, "B");
+                            ui.selectable_value(&mut self.modal_content.key, Key::C, "C");
+                            ui.selectable_value(&mut self.modal_content.key, Key::D, "D");
+                            ui.selectable_value(&mut self.modal_content.key, Key::E, "E");
+                            ui.selectable_value(&mut self.modal_content.key, Key::F, "F");
+                            ui.selectable_value(&mut self.modal_content.key, Key::G, "G");
+                            ui.selectable_value(&mut self.modal_content.key, Key::A, "A");
+                            ui.selectable_value(&mut self.modal_content.key, Key::B, "B");
                         });
                     if ui.button("ok").clicked() {
                         let selected = self.modal_content.selected;
@@ -116,7 +116,12 @@ impl eframe::App for View {
                         let bpm = self.modal_content.bpm;
                         self.show_modal_window = false;
                         self.input_producer
-                            .push(Input::Create(selected, time, utils::freq(key), bpm))
+                            .push(Input::Create(
+                                selected,
+                                time,
+                                utils::key_to_frequency(key),
+                                bpm,
+                            ))
                             .unwrap();
                         self.beat_views[selected] = Some(ExampleBeatView {
                             time_signature: time,
@@ -271,7 +276,7 @@ pub enum ViewMessage {
 #[derive(Clone, Copy)]
 struct ExampleBeatView {
     time_signature: (u8, u8),
-    key: Keys,
+    key: Key,
     bpm: u16,
     is_running: bool,
     bar_length: f32,
@@ -281,7 +286,7 @@ struct ExampleBeatView {
 struct ModalContent {
     selected: usize,
     time_signature: (u8, u8),
-    key: Keys,
+    key: Key,
     bpm: u16,
 }
 
@@ -289,7 +294,7 @@ impl ExampleBeatView {
     fn default() -> Self {
         Self {
             time_signature: (4, 4),
-            key: Keys::C,
+            key: Key::C,
             bpm: 120,
             is_running: false,
             bar_length: 60.0 / 120.0 * 4.0, // minute * bpm * beat

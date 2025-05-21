@@ -23,7 +23,36 @@ impl App {
         input_consumer: HeapConsumer<Input>,
         view_producer: HeapProducer<ViewMessage>,
     ) -> Result<App, anyhow::Error> {
-        let example_beat = ExampleBeat::new((4, 4), 120, C_FREQ, sample_rate as u32, channel_count);
+        let beats = [
+            Some(ExampleBeat::new(
+                (4, 4),
+                120,
+                C_FREQ,
+                sample_rate as u32,
+                channel_count,
+            )),
+            Some(ExampleBeat::new(
+                (4, 4),
+                120,
+                C_FREQ,
+                sample_rate as u32,
+                channel_count,
+            )),
+            Some(ExampleBeat::new(
+                (4, 4),
+                120,
+                C_FREQ,
+                sample_rate as u32,
+                channel_count,
+            )),
+            Some(ExampleBeat::new(
+                (4, 4),
+                120,
+                C_FREQ,
+                sample_rate as u32,
+                channel_count,
+            )),
+        ];
         Ok(App {
             sample_rate,
             channel_count,
@@ -32,7 +61,7 @@ impl App {
             producer,
             input_consumer,
             view_producer,
-            beats: [Some(example_beat); BEAT_COUNT],
+            beats,
         })
     }
 
@@ -41,15 +70,14 @@ impl App {
             if !self.producer.is_full() {
                 let mut value = 0.0;
                 for i in 0..BEAT_COUNT {
-                    if let Some(mut beat) = self.beats[i] {
-                        let (show, accent) = beat.time_signature.update();
+                    if let Some(beat) = &mut self.beats[i] {
+                        let (show, accent) = beat.time_signature.update(self.tick);
                         if show && beat.is_running {
                             let accent_multiplier = if accent { 2.0 } else { 1.0 };
-                            value += self
-                                .oscillator
-                                .sine(beat.key * 16.0 * accent_multiplier, self.tick as f32);
+                            self.oscillator
+                                .set_frequency(beat.key * 16.0 * accent_multiplier);
+                            value += self.oscillator.sine();
                         }
-                        self.beats[i] = Some(beat);
                     }
                 }
 
@@ -61,9 +89,8 @@ impl App {
         while let Some(message) = self.input_consumer.pop() {
             match message {
                 Input::Toggle(i) => {
-                    if let Some(mut beat) = self.beats[i] {
+                    if let Some(beat) = &mut self.beats[i] {
                         beat.toggle();
-                        self.beats[i] = Some(beat);
                     }
                 }
                 Input::Delete(i) => self.beats[i] = None,
@@ -83,7 +110,7 @@ impl App {
 
         if self.view_producer.free_len() >= 5 {
             let mut beat_index = 0;
-            for beat in self.beats {
+            for beat in &self.beats {
                 if let Some(beat) = beat {
                     self.view_producer
                         .push(ViewMessage::Beat(
@@ -98,7 +125,7 @@ impl App {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 struct ExampleBeat {
     time_signature: TimeSignature,
     key: f32,
@@ -121,6 +148,6 @@ impl ExampleBeat {
     }
 
     pub fn sync(&mut self, elapsed_samples: u32) {
-        self.time_signature.sync(elapsed_samples);
+        // self.time_signature.sync(elapsed_samples);
     }
 }
