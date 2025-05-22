@@ -26,15 +26,13 @@ impl Default for View {
         let view_ring = HeapRb::new(100000);
         let (view_producer, view_consumer) = view_ring.split();
         let audio_model = AudioModel::new(consumer).unwrap();
-        let mut generator = Generator::new(
-            producer,
-            input_consumer,
-            view_producer,
-            audio_model.sample_rate,
-        )
-        .unwrap();
-        std::thread::spawn(move || loop {
-            generator.update();
+        let sample_rate = audio_model.sample_rate;
+        std::thread::spawn(move || {
+            let mut generator =
+                Generator::new(producer, input_consumer, view_producer, sample_rate).unwrap();
+            loop {
+                generator.update();
+            }
         });
         Self {
             audio_model,

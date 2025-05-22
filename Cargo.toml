@@ -9,13 +9,13 @@ resolver = "2"
 
 [dependencies]
 audrey = "0.3.0"
-num = "0.4.0"
-rand = "0.8"
-rand_distr = "0.4.3"
+num = "0.4"
+rand = "0.9"
+rand_distr = "0.5"
 
 [dev-dependencies]
 bevy = "0.11.0"
-cpal = "0.15.0"
+cpal = "0.15"
 anyhow = "1.0.35"
 audrey = "0.3.0"
 ringbuf = "0.3.2"
