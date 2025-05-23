@@ -51,21 +51,24 @@ impl Generator {
 
     pub fn update(&mut self) {
         for _ in 0..1024 {
-            if self.is_running && !self.producer.is_full() {
-                self.oscillator.set_frequency(self.freq);
-                let mut value = match self.oscillator_type {
-                    OscillatorType::Sine => self.oscillator.sine(),
-                    OscillatorType::Sawtooth => self.oscillator.sawtooth(),
-                    OscillatorType::Square => self.oscillator.square(0.5),
-                    OscillatorType::Triangle => self.oscillator.triangle(),
-                };
-                value += match self.noise_type {
-                    NoiseType::None => 0.0,
-                    NoiseType::Random => self.noise.rand_noise(),
-                    NoiseType::White => self.noise.white_noise(),
-                };
-                // let value = kopek::wave::white_noise();
-                // let value = kopek::wave::rand_noise();
+            if !self.producer.is_full() {
+                let mut value = 0.0;
+                if self.is_running {
+                    self.oscillator.set_frequency(self.freq);
+                    value = match self.oscillator_type {
+                        OscillatorType::Sine => self.oscillator.sine(),
+                        OscillatorType::Sawtooth => self.oscillator.sawtooth(),
+                        OscillatorType::Square => self.oscillator.square(0.5),
+                        OscillatorType::Triangle => self.oscillator.triangle(),
+                    };
+                    value += match self.noise_type {
+                        NoiseType::None => 0.0,
+                        NoiseType::Random => self.noise.rand_noise(),
+                        NoiseType::White => self.noise.white_noise(),
+                    };
+                    // let value = kopek::wave::white_noise();
+                    // let value = kopek::wave::rand_noise();
+                }
                 self.producer.push(value).unwrap();
                 if !self.view_producer.is_full() {
                     self.view_producer.push(value).unwrap();
