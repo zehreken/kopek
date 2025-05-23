@@ -32,18 +32,18 @@ where
 }
 
 // Under the assumption that sample rate is 44100 Hz
-pub fn duration_in_seconds<T>(frames: Vec<T>) -> u32 {
-    frames.len() as u32 / 44100
+pub fn duration_in_seconds<T>(frames: Vec<T>, sample_rate: f32) -> f32 {
+    frames.len() as f32 / sample_rate
 }
 
-pub fn detect_bpm(frames: Vec<[i16; 2]>) -> u32 {
+pub fn detect_bpm(frames: Vec<[i16; 2]>, sample_rate: f32) -> u32 {
     const C: f32 = 5.5;
     let f_frames: Vec<[f32; 2]> = frames
         .iter()
         .map(|f| [f[0] as f32 / i16::MAX as f32, f[1] as f32 / i16::MAX as f32])
         .collect();
 
-    let duration_in_seconds = duration_in_seconds(frames) as usize;
+    let duration_in_seconds = duration_in_seconds(frames, sample_rate) as usize;
     let mut beats = 0;
     for i in 0..duration_in_seconds {
         let start = i * 44100;

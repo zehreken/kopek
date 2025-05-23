@@ -4,7 +4,7 @@ pub struct Metronome {
     beat_index: u32,
     sample_count: u32,
     tick_period: f32,
-    show_beat: bool,
+    on_beat: bool,
 }
 
 impl Metronome {
@@ -15,7 +15,7 @@ impl Metronome {
             beat_index: 0,
             sample_count: 0,
             tick_period,
-            show_beat: false,
+            on_beat: false,
         }
     }
 
@@ -24,7 +24,7 @@ impl Metronome {
         self.sample_count = elapsed_samples;
 
         let remainder = self.sample_count % self.tick_period as u32;
-        self.show_beat = remainder > 0 && remainder < 8192;
+        self.on_beat = remainder > 0 && remainder < 8192;
         self.beat_index = self.sample_count / self.tick_period as u32;
     }
 
@@ -34,7 +34,7 @@ impl Metronome {
     }
 
     // Used to make a sound or visualize
-    pub fn show_beat(&self) -> bool {
-        self.show_beat
+    pub fn on_beat(&self) -> bool {
+        self.on_beat
     }
 }
