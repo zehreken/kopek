@@ -53,9 +53,10 @@ impl Oscillator {
 
     // https://bmtechjournal.wordpress.com/2020/05/27/super-fast-quadratic-sinusoid-approximation/
     pub fn fake_sine(&mut self) -> f32 {
+        let x = (self.phase / std::f32::consts::PI) - 1.0; // x in [-1, 1]
+        let value = 4.0 * x * (1.0 - x.abs());
         let phase_increment = 2.0 * std::f32::consts::PI * self.frequency / self.sample_rate;
         self.phase = (self.phase + phase_increment) % (2.0 * std::f32::consts::PI);
-        let value = self.phase * (1.0 - self.phase.abs());
 
         value
     }

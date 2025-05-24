@@ -7,6 +7,7 @@ pub enum OscillatorType {
     Sawtooth,
     Square,
     Triangle,
+    FakeSine,
 }
 
 pub enum NoiseType {
@@ -60,6 +61,7 @@ impl Generator {
                         OscillatorType::Sawtooth => self.oscillator.sawtooth(),
                         OscillatorType::Square => self.oscillator.square(0.5),
                         OscillatorType::Triangle => self.oscillator.triangle(),
+                        OscillatorType::FakeSine => self.oscillator.fake_sine(),
                     };
                     value += match self.noise_type {
                         NoiseType::None => 0.0,
@@ -91,6 +93,8 @@ impl Generator {
                         self.oscillator_type = OscillatorType::Square;
                     } else if osc == 3 {
                         self.oscillator_type = OscillatorType::Triangle;
+                    } else if osc == 4 {
+                        self.oscillator_type = OscillatorType::FakeSine;
                     }
                 }
                 Input::ChangeNoise(noise) => {

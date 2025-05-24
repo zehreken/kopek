@@ -96,6 +96,11 @@ impl eframe::App for View {
                         .push(Input::ChangeOscillator(3))
                         .unwrap();
                 }
+                if ui.button("fake sine").clicked() {
+                    self.input_producer
+                        .push(Input::ChangeOscillator(4))
+                        .unwrap();
+                }
             });
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 let octave_factor = 2_u8.pow(self.octave as u32) as f32;
@@ -157,7 +162,7 @@ impl eframe::App for View {
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("Frequency domain");
+            ui.heading("Time domain");
 
             self.sample.make_contiguous();
             let waveform_line = Line::new(PlotPoints::from_ys_f32(&self.sample.as_slices().0));
