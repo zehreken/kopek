@@ -1,30 +1,32 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-fn fibonacci(n: u64) -> u64 {
-    match n {
-        0 => 1,
-        1 => 1,
-        n => fibonacci(n - 1) + fibonacci(n - 2),
-    }
+fn real_sine(phase: f32) -> f32 {
+    phase.sin()
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
-    c.bench_function("fib 20", |b| b.iter(|| fibonacci(black_box(20))));
+fn fake_sine(phase: f32) -> f32 {
+    let x = (phase / std::f32::consts::PI) - 1.0;
+    4.0 * x * (1.0 - x.abs())
+}
 
-    puffin::set_scopes_on(true);
-    c.bench_function("puffin_on", |b| {
+fn bench_sine_functions(c: &mut Criterion) {
+    let mut phase = 0.0;
+    let increment = 0.01;
+
+    c.bench_function("real sine", |b| {
         b.iter(|| {
-            puffin::profile_function!();
+            phase += increment;
+            black_box(real_sine(black_box(phase)));
         })
     });
 
-    puffin::set_scopes_on(false);
-    c.bench_function("puffin_off", |b| {
+    c.bench_function("fake sine", |b| {
         b.iter(|| {
-            puffin::profile_function!();
+            phase += increment;
+            black_box(fake_sine(black_box(phase)));
         })
     });
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, bench_sine_functions);
 criterion_main!(benches);

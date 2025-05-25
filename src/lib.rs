@@ -26,13 +26,13 @@ mod tests {
     #[test]
     fn get_duration_in_seconds_test() {
         let frames = decode(PATH);
-        assert_eq!(2, duration_in_seconds(frames))
+        assert_eq!(2.0, duration_in_seconds(frames, 44100.0))
     }
 
     #[test]
     fn detect_bpm_test() {
         let frames = decode(PATH);
-        let bpm = detect_bpm(frames);
+        let bpm = detect_bpm(frames, 44100.0);
         assert_eq!(83, bpm);
     }
 }
