@@ -1,5 +1,5 @@
 use crate::view::Input;
-use kopek::{noise::Noise, oscillator::*, utils::A_FREQ};
+use kopek::{noise::Noise, oscillator::*, utils::C_FREQ};
 use ringbuf::{HeapConsumer, HeapProducer};
 
 pub enum OscillatorType {
@@ -39,7 +39,7 @@ impl Generator {
         Ok(Generator {
             is_running: false,
             tick: 0,
-            freq: A_FREQ,
+            freq: C_FREQ,
             oscillator: Oscillator::new(sample_rate),
             oscillator_type: OscillatorType::Sine,
             noise: Noise::new(),
