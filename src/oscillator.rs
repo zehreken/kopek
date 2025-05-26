@@ -37,6 +37,7 @@ impl Oscillator {
         }
         match self.wave_type {
             WaveType::Sine => self.sine(),
+            WaveType::FakeSine => self.fake_sine(),
             WaveType::Sawtooth => self.sawtooth(),
             WaveType::Square { duty } => self.square(duty),
             WaveType::Triangle => self.triangle(),
@@ -93,23 +94,8 @@ impl Oscillator {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum WaveType {
     Sine,
+    FakeSine,
     Sawtooth,
     Square { duty: f32 },
     Triangle,
 }
-
-// This is AI generated code
-// fn sawtooth_wave(freq: f32, sample_rate: f32, duration: f32) -> Vec<f32> {
-//     let num_samples = (duration * sample_rate) as usize;
-//     let freq_incr = freq / sample_rate;
-//     let mut phase: f32 = 0.0;
-//     let mut waveform = Vec::with_capacity(num_samples);
-
-//     for i in 0..num_samples {
-//         let value = 2.0 * (phase - phase.floor()) - 1.0;
-//         waveform.push(value);
-//         phase = (phase + freq_incr) % 1.0;
-//     }
-
-//     waveform
-// }
