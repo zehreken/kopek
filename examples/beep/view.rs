@@ -18,7 +18,7 @@ pub struct View {
     selected_noise: u8,
     selected_wave: u8,
     selected_freq: u8,
-    octave: u8,
+    selected_octave: u8,
 }
 
 impl Default for View {
@@ -46,7 +46,7 @@ impl Default for View {
             selected_noise: 0,
             selected_wave: 0,
             selected_freq: 0,
-            octave: 1,
+            selected_octave: 1,
         }
     }
 }
@@ -95,6 +95,7 @@ impl eframe::App for View {
                     .unwrap();
             }
             let cached_freq = self.selected_freq;
+            let cached_octave = self.selected_octave;
             ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
                 ui.radio_value(&mut self.selected_freq, 0, "C1");
                 ui.radio_value(&mut self.selected_freq, 1, "C#");
@@ -109,27 +110,27 @@ impl eframe::App for View {
                 ui.radio_value(&mut self.selected_freq, 10, "A#");
                 ui.radio_value(&mut self.selected_freq, 11, "B");
             });
-            if cached_freq != self.selected_freq {
-                let octave_factor = 2_u8.pow(self.octave as u32) as f32;
+            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("down").clicked() {
+                    if self.selected_octave > 1 {
+                        self.selected_octave -= 1;
+                    }
+                }
+                ui.label(format!("octave: {0}", self.selected_octave));
+                if ui.button("up").clicked() {
+                    if self.selected_octave < 5 {
+                        self.selected_octave += 1;
+                    }
+                }
+            });
+            if cached_freq != self.selected_freq || cached_octave != self.selected_octave {
+                let octave_factor = 2_u8.pow(self.selected_octave as u32) as f32;
                 let key = utils::KEYS[self.selected_freq as usize].1;
                 let freq = utils::key_to_frequency(key);
                 self.input_producer
                     .push(Input::ChangeFreq(freq * octave_factor))
                     .unwrap();
             }
-            ui.with_layout(egui::Layout::left_to_right(egui::Align::TOP), |ui| {
-                if ui.button("down").clicked() {
-                    if self.octave > 1 {
-                        self.octave -= 1;
-                    }
-                }
-                ui.label(format!("octave: {0}", self.octave));
-                if ui.button("up").clicked() {
-                    if self.octave < 5 {
-                        self.octave += 1;
-                    }
-                }
-            });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
