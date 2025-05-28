@@ -106,7 +106,7 @@ impl WaveType {
             WaveType::Sine => 0,
             WaveType::FakeSine => 1,
             WaveType::Sawtooth => 2,
-            WaveType::Square { duty } => 3,
+            WaveType::Square { duty: _ } => 3,
             WaveType::Triangle => 4,
         }
     }

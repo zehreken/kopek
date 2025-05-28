@@ -32,3 +32,14 @@ pub enum NoiseType {
     Random = 1,
     White = 2,
 }
+
+impl NoiseType {
+    pub fn from_u8(value: u8) -> Option<NoiseType> {
+        match value {
+            0 => Some(NoiseType::None),
+            1 => Some(NoiseType::Random),
+            2 => Some(NoiseType::White),
+            _ => None,
+        }
+    }
+}
