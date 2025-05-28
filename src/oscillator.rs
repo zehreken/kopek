@@ -99,3 +99,26 @@ pub enum WaveType {
     Square { duty: f32 },
     Triangle,
 }
+
+impl WaveType {
+    pub fn to_u8(&self) -> u8 {
+        match self {
+            WaveType::Sine => 0,
+            WaveType::FakeSine => 1,
+            WaveType::Sawtooth => 2,
+            WaveType::Square { duty } => 3,
+            WaveType::Triangle => 4,
+        }
+    }
+
+    pub fn from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(WaveType::Sine),
+            1 => Some(WaveType::FakeSine),
+            2 => Some(WaveType::Sawtooth),
+            3 => Some(WaveType::Square { duty: 0.5 }), // default duty cycle
+            4 => Some(WaveType::Triangle),
+            _ => None,
+        }
+    }
+}

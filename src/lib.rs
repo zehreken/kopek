@@ -3,6 +3,7 @@ pub mod envelope;
 pub mod fft;
 pub mod metronome;
 pub mod noise;
+pub mod noise_generator;
 pub mod oscillator;
 pub mod time_signature;
 pub mod utils;
